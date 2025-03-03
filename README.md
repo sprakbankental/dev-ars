@@ -15,6 +15,8 @@ ARS software and related materials, temporary dev repo
 
 There is some delay, based on what you want to do you might need to measure the exact delay + see if the delay is consistent or not.
 
+If you change something in the Flic Hub SDK, remember to make a backup. I already lost my code once because it randomly disappeared.
+
 Resources I used to get this to work (in case you need them):
 
 https://github.com/50ButtonsEach/flic-hub-sdk-mqtt-js
