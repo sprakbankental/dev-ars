@@ -105,6 +105,46 @@ buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
     publishMessage(buttonId, pressTime, clickType);
 });
 
+/* The listened-to event above introduces significant latency, required to
+ * distinguish a button press and release (single click) from other types such
+ * as double click and hold. This is especially true since the time is logged 
+ * on the hub's side (i.e. only after the event type has been evaluated and
+ * transmitted).
+ *
+ * To skip this pre-evaluation, and instead record raw presses (and release)
+ * with minimum latency, use the following events.
+ *
+ * Further info on https://hubsdk.flic.io/static/documentation/#12_buttondown
+ */
+buttonManager.on("buttonDown", function(obj) {
+    // Time logging at beginning for even lower delay (possibly only sub-ms)
+    var eventTime = new Date().toISOString();
+    // Retrieve the button object using its bdaddr
+    var button = buttonManager.getButton(obj.bdaddr);
+    // Use button.serialNumber if available or fallback to bdaddr
+    var buttonId = button.serialNumber || obj.bdaddr;
+    
+    eventType = "press"
+
+    // Log additional information if needed. Remove later, fully trust MQTT
+    console.log("Button " + buttonId + " reports a " + eventType + ".");
+
+    // Publish a message including the button identifier
+    publishMessage(buttonId, eventTime, eventType);
+});
+
+// Releases may be used to determine hold duration, or to catch missing events
+// Leaner adaption to the buttonDown listener above
+buttonManager.on("buttonUp", function(obj) {
+    var eventTime = new Date().toISOString();
+    var buttonId = buttonManager.getButton(obj.bdaddr).serialNumber || obj.bdaddr;
+    
+    eventType = "release"
+
+    console.log("Button " + buttonId + " reports a " + eventType + ".");
+    publishMessage(buttonId, eventTime, eventType);
+});
+
 
 
 // Now call connect() to initiate the connection
