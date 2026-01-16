@@ -1,0 +1,21 @@
+// SBTal AsciiDoc documentation admonition store: important notes
+
+
+
+// tag::git-no-ff[]
+[IMPORTANT]
+====
+All merge operations in SBTal repos should be done without 
+fast forwarding. We get more readable trees at the cost of som extra 
+objects. Fast forwarding is turned off for a single commit using the 
+`--no-ff` flag. You can also make it the default behaviour for git by
+doing `git config --global merge.ff no`
+====
+// end::git-no-ff[]
+
+// tag::example[]
+[IMPORTANT]
+====
+An example important note.
+====
+// end::example[]

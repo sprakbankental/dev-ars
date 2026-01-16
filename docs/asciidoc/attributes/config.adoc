@@ -1,0 +1,23 @@
+// NB!! THIS FILE MAY NOT INCLUDE BLANK LINES!
+//-----------------------------------------------------------------------
+// Repo version (documentation is versione on a per-repo basis)
+:repoversion: 1.1.0-0.0.1
+// Config includes
+// ---------------
+// Default directories
+include::./directories.adoc[]
+// asciidoctor-bibtex settings
+include::./asciidoctor-bibtex.adoc[]
+// User-defined tokens
+include::./vocabulary.adoc[]
+include::./links.adoc[]
+include::./variables.adoc[]
+// ----------------------------------------------------------------------
+// Configuration
+// -------------
+// For these pages, we use a ToC as standard
+:toc:     left
+// This allows bullets in callouts, among other things
+:icons:   font
+//-----------------------------------------------------------------------
+// NB!! LAST LINE OF FILE 

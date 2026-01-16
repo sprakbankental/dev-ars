@@ -1,0 +1,8 @@
+// SBTal AsciiDoc documentation admonition store: tip
+
+// tag::example[]
+[TIP]
+====
+An example tip.
+====
+// end::example[]

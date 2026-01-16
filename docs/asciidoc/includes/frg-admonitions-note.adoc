@@ -1,0 +1,58 @@
+// SBTal AsciiDoc documentation admonition store: notes
+
+
+// tag::naming-topic-form[]
+[NOTE]
+====
+For active instructions such as manuals,
+tutorials, and guidelines, the topic is best expressed as a  present 
+participle verb, e.g. "naming". 
+
+For static descriptions and formalisms such as 
+specifications, recommendations and APIs, try to use a noun pluras 
+for the topic, e.g. "names".
+====
+// end::naming-topic-form[]
+
+//tag::concept-release[]
+[NOTE]
+====
+We use _release_, here, as a high-level concept, unattached to 
+computational implementations. In practice, a release may be implemented
+as the simple tagging of a file, or the change of a version statement in 
+a document. 
+
+For SBTal materials that is managed by git, a release is simply the 
+tagging of a new version. For code that sits in GitHub repos, we use GitHubs
+higher-level mechanism for releases cite:[olsonReleaseYourSoftware2013], 
+which essentially packs up tagged materials in an accessible manner. This
+is a matter of implementation, however, and SBTal releases are not tied to
+any specific implementation. 
+====
+//end::concept-release[]
+
+// tag::concept-version[]
+[NOTE]
+====
+We use _version_, here, as a high-level concept, unattached to 
+computational implementations. In practice, a version may be implemented
+as the simple tagging of a file, or the change of a version statement in 
+a document. The act of changing version on some material is, on this level,
+the same as _releasing_the new version. 
+
+In practice we use a number of tools to facilitate versioning and releases.
+For SBTal materials that is managed by git, releasing a version is done by 
+tagging a commit with a version that complies with this guideling. For GitHub
+repos, there is a slight distinction in that releasing also entails some packing 
+and other GitHub-specific actions. This is a matter of implementation, however, 
+and SBTal versioning is not tied to any specific implementation. 
+====
+// end::concept-version[]
+
+
+// tag::example[]
+[NOTE]
+====
+An example note.
+====
+// end::example[]

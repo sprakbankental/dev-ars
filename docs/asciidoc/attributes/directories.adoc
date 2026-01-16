@@ -1,0 +1,11 @@
+// NB!! THIS FILE MAY NOT INCLUDE BLANK LINES!
+//-----------------------------------------------------------------------
+// Default directories
+// Image directory (has to be in docs root for HTML rendering)
+// -----------------------------------------------------------
+:imagesdir: ../images/
+// Default include directory
+// -------------------------
+:includedir: ./includes/
+//-----------------------------------------------------------------------
+// NB!! LAST LINE OF FILE 

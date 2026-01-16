@@ -1,0 +1,16 @@
+// NB!! THIS FILE MAY NOT INCLUDE BLANK LINES!
+//-----------------------------------------------------------------------
+// Variable definitions and defaults
+// ---------------------------------
+// General: Used in code examples, typical values are "develop" and "main"
+:var-branch: <branch>  
+:var-branch2: <branch2>  
+:var-tag: <tag> 
+:var-version: <version> 
+:var-current-target: <current-target>
+// ---------------------------------
+// Perl: Used in Perl documents
+:var-perl-minver: v5.32
+:var-perl-version-minver: 0.77
+//-----------------------------------------------------------------------
+// NB!! LAST LINE OF FILE 

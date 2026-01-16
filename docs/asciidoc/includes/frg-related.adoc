@@ -1,0 +1,21 @@
+// SBTal AsciiDoc documentation store: related docs
+
+
+// tag::versioning[]
+.Related material
+****
+- xref:gdl-versioning.adoc[{voc-sbtal} guideline: versioning]
+- xref:gdl-releasing.adoc[{voc-sbtal} guideline: releasing]
+- xref:gdl-git-committing.adoc[{voc-sbtal} guideline: Git commiting]
+- xref:gdl-git-branching.adoc[{voc-sbtal} guideline: Git branching]
+****
+// end::versioning[]
+
+
+// tag::example[]
+.Related material
+****
+- xref:.[Self reference for example purposes]
+****
+// end::example[]
+

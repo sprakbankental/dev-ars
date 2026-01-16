@@ -1,0 +1,16 @@
+// NB!! THIS FILE MAY NOT INCLUDE BLANK LINES!
+//-----------------------------------------------------------------------
+// Links and URIs
+// --------------
+// SBTal
+// -----
+:uri-sbtal: https://www.sprakbanken.speech.kth.se/ 
+:link-sbtal: link:{uri-sbtal}[{voc-sbtal}]
+:link-sbtal-long: link:{uri-sbtal}[{voc-sbtal-long}]
+// KTH
+// ---
+:uri-kth: https://www.kth.se/
+:link-kth: link:{uri-kth}[{voc-kth}]
+:link-kth-long: link:{uri-kth}[{voc-kth-long}]
+//-----------------------------------------------------------------------
+// NB!! LAST LINE OF FILE 

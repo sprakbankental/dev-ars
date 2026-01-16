@@ -1,0 +1,67 @@
+= SBTal AsciiDoc example 
+include::./attributes/config.adoc[]
+:author_1:         Jens Edlund
+:email_1:          edlund@speech.kth.se
+:firstname_1:      Jens
+:lastname_1:       Edlund
+:authorinitials_1: JE
+:revnumber:        {repoversion}
+:revdate:          2022-11-18
+:revremark:        First draft
+:description: Example of typical SBTal AsciiDoc page.
+:keywords: sbtal best practices, asciidoc
+include::./attributes/config.adoc[]
+
+== A section
+
+Some documentation. 
+
+A reference cite:[ManuallyCreatingSingle].
+
+.An example of an image
+image::example.png["An image example"]
+
+And some more stuff.
+
+Build these files with
+
+[source,sh]
+----
+cd docs/ascidoc
+asciidoctor -r asciidoctor-bibtex --destination-dir ../html example.adoc
+----
+
+== Examples of includes
+
+An example of included material:
+
+include::includes/example.adoc[]
+
+And some examples of inclusion of structured materials.
+ 
+An included related work section:
+
+include::includes/frg-related.adoc[tags=example]
+
+Some admonitions:
+
+include::includes/frg-admonitions-caution.adoc[tags=example]
+
+include::includes/frg-admonitions-important.adoc[tags=example]
+
+include::includes/frg-admonitions-note.adoc[tags=example]
+
+include::includes/frg-admonitions-tip.adoc[tags=example]
+
+include::includes/frg-admonitions-warning.adoc[tags=example]
+
+A repo global set:
+
+include::includes/frg-sets.adoc[tags=example]
+
+
+== References
+
+bibliography::[]
+
+

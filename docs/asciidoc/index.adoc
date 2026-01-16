@@ -1,0 +1,24 @@
+= SBTal documentation index page 
+include::./attributes/config.adoc[]
+:author_1:         Jens Edlund
+:email_1:          edlund@speech.kth.se
+:firstname_1:      Jens
+:lastname_1:       Edlund
+:authorinitials_1: JE
+:revnumber:        {repoversion}
+:revdate:          2022-11-17
+:revremark:        Initial release
+:description: Index page template for SBTal documentation
+:keywords: documentation, sbtal policy, sbtal best practices
+
+{voc-sbtal} repos should have an index page set up like this template.
+
+== Links
+
+* link:https://github.com/sprakbankental/docs-policy/blob/main/docs/html/index.html[Main {voc-sbtal} documentation]
+
+== References
+
+bibliography::[]
+
+

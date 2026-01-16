@@ -1,0 +1,11 @@
+// SBTal AsciiDoc documentation store: repo global sets
+
+// tag::example[]
+.Example of a repo global set
+****
+- apples
+- pears
+- oranges
+****
+// end::example[]
+

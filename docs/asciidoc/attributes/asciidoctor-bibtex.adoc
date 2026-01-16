@@ -1,0 +1,13 @@
+// NB!! THIS FILE MAY NOT INCLUDE BLANK LINES!
+//-----------------------------------------------------------------------
+// Main bilbiography, exported from 
+// SpråkbankenTal>??Collection??
+// -----------------------------
+:bibtex-file: ./biblatex/main.bib 
+:bibtex-style: apa
+:bibtex-format: asciidoc // only option for web rendering
+:bibtex-order: alphabetical
+// Until we set up the docker to use stronger juice...
+:source-highlighter: highlight.js
+//-----------------------------------------------------------------------
+// NB!! LAST LINE OF FILE 

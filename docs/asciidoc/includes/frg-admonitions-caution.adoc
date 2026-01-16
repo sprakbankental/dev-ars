@@ -1,0 +1,8 @@
+// SBTal AsciiDoc documentation admonition store: cautions
+
+// tag::example[]
+[CAUTION]
+====
+An example caution.
+====
+// end::example[]

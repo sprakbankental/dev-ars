@@ -1,0 +1,10 @@
+// NB!! THIS FILE MAY NOT INCLUDE BLANK LINES!
+//-----------------------------------------------------------------------
+// Names
+// -----
+:voc-sbtal: SBTal 
+:voc-sbtal-long: Språkbanken Tal
+:voc-kth: KTH
+:voc-kth-long: KTH Royal Institute of Technology
+//-----------------------------------------------------------------------
+// NB!! LAST LINE OF FILE 
