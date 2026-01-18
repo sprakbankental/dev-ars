@@ -124,11 +124,21 @@ RUN <<"END_SNAPSHOT"
 
 END_SNAPSHOT
 
+# This is a clean slate stage. Not really needed here but still
+# good practice and aligned with SBT best practices for Docker builds
+FROM scratch AS snapshot-aggr
+
+COPY --from=snapshot-dl /artifacts/ /artifacts/
+
+
 # tag::serve-base[]
 #- Begin stage: serve-base --------------------------------------------#
 FROM base-setup AS serve-base
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+# NB! We should use SBT standard web server here
+# NB! Fix in next version
 
 # Install nginx (and nothing else)
 RUN <<"END_SERVE_BASE"
@@ -181,7 +191,10 @@ FROM serve-base AS serve
 ENV BUILDSTAGE="serve"
 
 # Copy snapshot artefacts
-COPY --from=snapshot-dl /artifacts/snapshot /snapshot
+RUN --mount=type=bind,from=snapshot-aggr,source=/artifacts,target=/artifacts \
+	mkdir -p /snapshot && \
+	rm -rf /snapshot/* && \
+  cp -a /artifacts/. /
 
 EXPOSE 8000
 
