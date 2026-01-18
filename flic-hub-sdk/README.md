@@ -146,3 +146,39 @@ current hub firmware versions.
 At some point in time, it may be necessary to version lock
 the IDE and the Hub firmware, in which case it is likely that
 FLIC button firmware must be version locked as well.
+
+## Directory layout
+
+The snapshot-related files are contained in
+a dedicated subtree within the repository.
+
+The layout is intentionally simple:
+
+flic-hub-sdk/
+├── Dockerfile
+├── README.md
+├── logs/
+│   └── snapshot.log
+├── snapshot
+    └── css/
+    └── js/
+    └── static/
+    └── index.html
+
+The snapshot content (HTML, JavaScript, CSS, WASM, images)
+is committed directly to version control.
+Each commit therefore represents
+a complete, self-contained IDE snapshot.
+
+Logs are append-only and record
+when a snapshot was taken,
+what was fetched, and
+how it was verified.
+They intentionally duplicate information that could be
+reconstructed from Git history,
+in order to remain readable without Git tooling.
+
+No attempt is made to
+maintain multiple snapshots in parallel within the working tree.
+Historical snapshots are accessed by checking out
+the corresponding Git commit.
