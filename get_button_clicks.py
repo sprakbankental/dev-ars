@@ -13,24 +13,24 @@ FILE_PATH = os.path.join(folder, f"button_press_data_{timestamp}.json")
 
 # The callback for when the client receives a CONNACK response from the server. (when the client connects to the broker)
 def on_connect(client, userdata, flags, reason_code, properties):
-    print(f"Connected with result code {reason_code}")
-    print("Type 'reset' to reset the timer for 'elapsedTime'.")
-    with open(FILE_PATH, 'a') as f:
-            f.write(json.dumps("Keep in mind that the recorded timestamp is 1 hour early.") + "\n")
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
-    client.subscribe("flic/button")
+		print(f"Connected with result code {reason_code}")
+		print("Type 'reset' to reset the timer for 'elapsedTime'.")
+		with open(FILE_PATH, 'a') as f:
+						f.write(json.dumps("Keep in mind that the recorded timestamp is 1 hour early.") + "\n")
+		# Subscribing in on_connect() means that if we lose the connection and
+		# reconnect then subscriptions will be renewed.
+		client.subscribe("flic/button")
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    try:
-        button_data = json.loads(msg.payload.decode("utf-8"))
-        with open(FILE_PATH, 'a') as f:
-            f.write(json.dumps(button_data) + "\n")
-        print("Button press data saved:", button_data)
-    except Exception as e:
-        print("Error processing message:", e)
-    
+		try:
+				button_data = json.loads(msg.payload.decode("utf-8"))
+				with open(FILE_PATH, 'a') as f:
+						f.write(json.dumps(button_data) + "\n")
+				print("Button press data saved:", button_data)
+		except Exception as e:
+				print("Error processing message:", e)
+
 # create an MQTT client instance and assign callbacks
 mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 mqttc.on_connect = on_connect
@@ -52,7 +52,7 @@ mqttc.loop_start()
 
 # allow terminal input to send commands
 while True:
-    command = input()
-    if command.strip().lower() == "reset":
-        mqttc.publish("flic/reset", "reset")
-        print("Reset command sent!")
+		command = input()
+		if command.strip().lower() == "reset":
+				mqttc.publish("flic/reset", "reset")
+				print("Reset command sent!")
