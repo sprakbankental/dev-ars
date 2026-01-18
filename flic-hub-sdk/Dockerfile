@@ -43,33 +43,54 @@ ENV BUILDSTAGE="base-setup"
 ARG SHOW_BUILD_STATS=none
 ENV SHOW_BUILD_STATS=${SHOW_BUILD_STATS}
 
+# Versioning
+ARG SBT_CA_CERTIFICATES_VERSION=20240203
+ENV SBT_CA_CERTIFICATES_VERSION=${SBT_CA_CERTIFICATES_VERSION}
 
-# Snapshot-only Dockerfile for Flic Hub SDK IDE
-# Base: Ubuntu 24.04 LTS (policy-compliant)
-
-FROM base-setup AS snapshot-base
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-# 4. Essential tools installation <5>
+# 4. Essential tools installation
 RUN <<"END_ESSENTIAL"
 #	exit 0
 	echo "Installing essential packages (shell: $0)"
 	apt-get update
 	apt-get install --yes --no-install-recommends \
-	wget \
+	ca-certificates="${SBT_CA_CERTIFICATES_VERSION}" \
+	;
+	apt-get clean
+	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+END_ESSENTIAL
+
+
+FROM base-setup AS snapshot-base
+
+# We're breaking policy and use wget instead of curl here
+# because we need the page cache functionality.
+ARG SBT_WGET_VERSION=1.21.4-1ubuntu4.1
+ENV SBT_WGET_VERSION=${SBT_WGET_VERSION}
+
+RUN <<"END_ESSENTIAL"
+#	exit 0
+	echo "Installing essential packages (shell: $0)"
+	apt-get update
+	apt-get install --yes --no-install-recommends \
+	wget="${SBT_WGET_VERSION}" \
 	ca-certificates \
 	;
 	apt-get clean
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 END_ESSENTIAL
 
-WORKDIR /snapshot
+FROM snapshot-base AS snapshot-dl
 
-FROM snapshot-base AS snapshot
+ARG SBT_SNAPSHOT_ROOT=/artifacts/snapshot
+ARG SBT_SNAPSHOT_URL=https://hubsdk.flic.io/
 
 RUN <<"END_SNAPSHOT"
 # Mirror the Hub SDK IDE
+	mkdir -p "${SBT_SNAPSHOT_ROOT}"
+	mkdir -p "${SBT_SNAPSHOT_ROOT}/hubsdk.flic.io/js"
+
+# There will be a few 404s that aren't important,
+# so we need to block early exit temporarily
 	set +e
 	wget \
 		--mirror \
@@ -79,8 +100,10 @@ RUN <<"END_SNAPSHOT"
 		--no-parent \
 		--execute robots=off \
 		--content-on-error \
-		https://hubsdk.flic.io/
+		--directory-prefix "${SBT_SNAPSHOT_ROOT}" \
+		"${SBT_SNAPSHOT_URL}"
 	rc=$?
+	# Reinstate early exit
 	set -e
 	case "$rc" in
 		0|8)
@@ -91,23 +114,15 @@ RUN <<"END_SNAPSHOT"
 			exit "$rc"
 			;;
 	esac
-END_SNAPSHOT
 
-RUN <<"END_WASM"
 	# Explicitly fetch WASM required by jssdkauth.js
-	mkdir -p hubsdk.flic.io/js
-	wget \
-		-O hubsdk.flic.io/js/jssdkauth.wasm \
-		https://hubsdk.flic.io/js/jssdkauth.wasm
-END_WASM
-
-RUN <<"END_TOOLS_JS"
 	# Explicitly fetch dynamically loaded tools.js
-	mkdir -p hubsdk.flic.io/js
 	wget \
-		-O hubsdk.flic.io/js/tools.js \
+		--directory-prefix "${SBT_SNAPSHOT_ROOT}/hubsdk.flic.io/js" \
+		https://hubsdk.flic.io/js/jssdkauth.wasm \
 		https://hubsdk.flic.io/js/tools.js
-END_TOOLS_JS
+
+END_SNAPSHOT
 
 # tag::serve-base[]
 #- Begin stage: serve-base --------------------------------------------#
@@ -166,7 +181,7 @@ FROM serve-base AS serve
 ENV BUILDSTAGE="serve"
 
 # Copy snapshot artefacts
-COPY --from=snapshot /snapshot /snapshot
+COPY --from=snapshot-dl /artifacts/snapshot /snapshot
 
 EXPOSE 8000
 
