@@ -126,7 +126,7 @@ END_SNAPSHOT
 
 # This is a clean slate stage. Not really needed here but still
 # good practice and aligned with SBT best practices for Docker builds
-FROM scratch AS snapshot-aggr
+FROM scratch AS snapshot
 
 COPY --from=snapshot-dl /artifacts/ /artifacts/
 
@@ -191,7 +191,7 @@ FROM serve-base AS serve
 ENV BUILDSTAGE="serve"
 
 # Copy snapshot artefacts
-RUN --mount=type=bind,from=snapshot-aggr,source=/artifacts,target=/artifacts \
+RUN --mount=type=bind,from=snapshot,source=/artifacts,target=/artifacts \
 	mkdir -p /snapshot && \
 	rm -rf /snapshot/* && \
   cp -a /artifacts/. /
