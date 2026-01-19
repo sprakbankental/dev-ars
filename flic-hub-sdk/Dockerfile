@@ -6,29 +6,40 @@
 #---------------------------------------------------------------------#
 # Application image for SBTal: snapshot and serve FLIC SDK <1>
 #
-# This Dockerfile implements two public build targets:
-# (1) snapshot
-# (2) serve
+# This Dockerfile implements three public build targets:
+# (1) serve (default, snapshots and serves)
+# (2) snapshot (snapshot only)
+# (3) serve-mounted (serve existing snapshot, mounted)
 #
 # `snapshot` creates a snapshot of FLIC's Hub SDK IDE
-# `serve`serves such a asnapshot locally
+# `serve` additionally includes a web server that
+# 	serves the asnapshot locally
+# 	(this can also be used to serve an existing snapshot)
 #
 # The reason for this is to safeguard against changes from FLIC,
 # since they've show a pretty chevalier attitude to user concerns,
 # and we're making a sizeable investment into their hardware.
 #---------------------------------------------------------------------#
 # This Dockerfile uses a multistage build sequence that adheres
-# to Språkbanken Tal's OCI build policy for Docker. <2>
+# to Språkbanken Tal's OCI build policy for Docker.
 #
-# Base image setup stage: base-setup
+# base-setup:    Base image setup stage; should be swapped for SBT OS
+# snapshot-base: Essential installations; should be swapped for SBT OS
+# snapshot-dl:   Image with current snapshot downloaded
+# aggr:          Scratch image with current snapshot
+# snapshot:      Clean image with current snapshot
+# serve-base:    Clean web server installation, no snapshot
+# serve-mounted: Web server expecting /snapshot to be mounted
+# serve:         Web server running off internal /snapshot
+#
 #---------------------------------------------------------------------#
 # <3> NB! This ought to use SBT's standard base OS and also its
 # Hadolint validation - fix for final version.
 #---------------------------------------------------------------------#
 # end::front-matter[]
 # tag::base-setup[]
-#- Begin stage: base image setup -------------------------------------# # <1>
-# 1. OS and shell setup
+#- Begin stage: base image setup -------------------------------------#
+# OS and shell setup
 ARG SBT_OS=ubuntu
 ARG SBT_OS_VERSION=24.04
 FROM ${SBT_OS}:${SBT_OS_VERSION} AS base-setup
@@ -47,7 +58,7 @@ ENV SHOW_BUILD_STATS=${SHOW_BUILD_STATS}
 ARG SBT_CA_CERTIFICATES_VERSION=20240203
 ENV SBT_CA_CERTIFICATES_VERSION=${SBT_CA_CERTIFICATES_VERSION}
 
-# 4. Essential tools installation
+# Essential tools installation
 RUN <<"END_ESSENTIAL"
 #	exit 0
 	echo "Installing essential packages (shell: $0)"
@@ -58,8 +69,10 @@ RUN <<"END_ESSENTIAL"
 	apt-get clean
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 END_ESSENTIAL
+# end::base-setup[]
 
-
+# tag::snapshot-base[]
+#- Begin stage: snapshot base image setup ----------------------------#
 FROM base-setup AS snapshot-base
 
 # We're breaking policy and use wget instead of curl here
@@ -78,7 +91,10 @@ RUN <<"END_ESSENTIAL"
 	apt-get clean
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 END_ESSENTIAL
+# end::snapshot-base[]
 
+# tag::snapshot-dl[]
+#- Begin stage: snapshot dl image setup ------------------------------#
 FROM snapshot-base AS snapshot-dl
 
 ARG SBT_SNAPSHOT_ROOT=/artifacts/snapshot
@@ -123,19 +139,43 @@ RUN <<"END_SNAPSHOT"
 		https://hubsdk.flic.io/js/tools.js
 
 END_SNAPSHOT
+# end::snapshot-dl[]
 
-# This is a clean slate stage. Not really needed here but still
-# good practice and aligned with SBT best practices for Docker builds
-FROM scratch AS snapshot
+# tag::aggr[]
+#- Begin stage: aggregation scratch image setup ----------------------#
+# This is a clean slate stage.
+# The use of these is good practice and aligned with
+# SBT best practices for Docker builds
+FROM scratch AS aggr
 
 COPY --from=snapshot-dl /artifacts/ /artifacts/
+# end::aggr[]
+
+# tag::snapshot[]
+#- Begin stage: snapshot ---------------------------------------------#
+FROM base-setup AS snapshot
+
+ENV BUILDSTAGE="snapshot"
+
+RUN <<"END_SNAPSHOT_GUARD"
+if mountpoint -q /snapshot; then
+	echo "ERROR: /snapshot is mounted during snapshot build." >&2
+	echo "The snapshot target must exclusively own /snapshot." >&2
+	exit 1
+fi
+END_SNAPSHOT_GUARD
+
+# Copy snapshot artefacts
+RUN --mount=type=bind,from=aggr,source=/artifacts,target=/artifacts \
+	mkdir -p /snapshot && \
+	rm -rf /snapshot/* && \
+  cp -a /artifacts/. /
+# end::snapshot[]
 
 
 # tag::serve-base[]
-#- Begin stage: serve-base --------------------------------------------#
+#- Begin stage: serve-base -------------------------------------------#
 FROM base-setup AS serve-base
-
-ENV DEBIAN_FRONTEND=noninteractive
 
 # NB! We should use SBT standard web server here
 # NB! Fix in next version
@@ -150,7 +190,6 @@ RUN <<"END_SERVE_BASE"
 	apt-get clean
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 END_SERVE_BASE
-# end::serve-base[]
 
 # tag::nginx-config[]
 RUN <<"END_NGINX_CONF"
@@ -169,7 +208,7 @@ http {
 	keepalive_timeout  65;
 
 	server {
-		listen 8000;
+		listen 80;
 		server_name localhost;
 
 		root /snapshot/hubsdk.flic.io;
@@ -183,6 +222,25 @@ http {
 EOF
 END_NGINX_CONF
 # end::nginx-config[]
+# end::serve-base[]
+
+# tag::serve-mounted[]
+#- Begin stage: serve-mounted -----------------------------------------#
+FROM serve-base AS serve-mounted
+
+ENV BUILDSTAGE="serve-mounted"
+
+EXPOSE 80
+
+# Run nginx in foreground (OCI-correct)
+CMD ["/bin/bash", "-c", "test -d /snapshot/hubsdk.flic.io || { echo 'ERROR: snapshot missing' >&2; exit 1; }; exec nginx -g 'daemon off;'"]
+
+#CMD ["/bin/bash", "-c", "\
+#	test -d /snapshot/hubsdk.flic.io \
+#	|| { echo 'ERROR: /snapshot/hubsdk.flic.io not found (did you forget to mount a snapshot?)' >&2; exit 1; }; \
+#	exec nginx -g 'daemon off;' \
+#"]
+# end::serve-mounted[]
 
 # tag::serve[]
 #- Begin stage: serve --------------------------------------------------#
@@ -190,14 +248,25 @@ FROM serve-base AS serve
 
 ENV BUILDSTAGE="serve"
 
+RUN <<"END_SNAPSHOT_GUARD"
+# Ensure /snapshot is not externally mounted
+# serve embeds its own snapshot and refuses overrides
+if mountpoint -q /snapshot; then
+	echo "ERROR: /snapshot is mounted, but this image embeds its own snapshot." >&2
+	echo "Use the serve-mounted target instead." >&2
+	exit 1
+fi
+END_SNAPSHOT_GUARD
+
 # Copy snapshot artefacts
-RUN --mount=type=bind,from=snapshot,source=/artifacts,target=/artifacts \
+RUN --mount=type=bind,from=aggr,source=/artifacts,target=/artifacts \
 	mkdir -p /snapshot && \
 	rm -rf /snapshot/* && \
   cp -a /artifacts/. /
 
-EXPOSE 8000
+EXPOSE 80
 
 # Run nginx in foreground (OCI-correct)
+
 CMD ["nginx", "-g", "daemon off;"]
 # end::serve[]
