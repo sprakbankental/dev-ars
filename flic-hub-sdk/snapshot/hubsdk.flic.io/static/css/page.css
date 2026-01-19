@@ -1,0 +1,205 @@
+body
+{
+	font-family: "Open Sans", "Helvetica-Neue", Helvetica, Arial, sans-serif;
+	color: #222;
+	background: #fdfdfd;
+	padding-top: 80px;
+	padding-bottom: 80px;
+}
+
+code
+{
+	background: #eee;
+	font-family: 'Roboto Mono', monospace;
+}
+
+code
+{
+	padding: 2px 6px 4px 6px;
+	border-radius: 4px;
+}
+
+pre code
+{
+	display: block;
+    padding: 12px 14px;
+	word-break: break-word;
+	overflow-x: auto;
+	border: 1px solid #ddd;
+	
+	color: #222;
+}
+
+
+a,
+a:visited,
+a:link,
+a:hover
+{
+	color: #1365e0;
+	background: #eff3ff;
+	padding: 1px 4px;
+	border-radius: 4px;
+	text-decoration: none;
+}
+
+a:hover
+{
+	color: #0065ff;
+	background: #c1d0ff;
+}
+
+.page
+{
+	max-width: 800px;
+	margin: 0 auto;
+}
+
+.footer
+{
+	margin-top: 51px;
+    color: #888;
+    font-size: 85%;
+}
+
+ul li.subitem
+{
+	list-style-type: none;
+}
+
+.page.documentation
+{
+	line-height: 1.7em;
+	padding-left: 22em;
+	margin: 0; 
+	float: left;
+}
+
+.page.documentation p
+{
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.page.documentation ul.parameters
+{
+	margin-top: -.5em;
+}
+
+h1
+{
+	font-weight: normal;
+	font-size: 290%;
+	margin-bottom: 2em;
+	line-height: 1.4em;
+}
+
+
+h2
+{
+	font-weight: normal;
+	font-size: 200%;
+}
+
+h3
+{
+	font-size: 140%;
+	margin-top: 2em;
+}
+
+h4
+{
+	font-size: 120%;
+	margin-top: 2em;
+}
+
+h5
+{
+	font-size: 100%;
+	margin-bottom: 0;
+}
+
+
+h1 a, h2 a, h3 a, h4 a, h5 a
+{
+	background: transparent;
+	padding: 0;
+}
+
+
+
+
+hr
+{
+	height: 1px;
+	background: #ccc;
+	margin-top: 3em;
+	margin-bottom: 3em;
+	border: none;
+}
+
+
+table
+{
+	border: 0;
+	margin: 0;
+	padding: 0;
+}
+
+table td
+{
+	padding: .2em 1em .2em 0;
+	margin: 0;
+}
+
+.navigation {
+	list-style: none;
+	top: 0;
+	left: 0;
+	margin: 0;
+	padding: 0;
+	font-size: 90%;
+	width: 22em;
+
+
+    padding: 1em;
+    background: #f9f9f9;
+    margin-right: 3em;
+
+    position: fixed;
+    height: 100%;
+    overflow-y: scroll;
+    padding-bottom: 2em;
+    box-sizing: border-box;
+}
+
+.navigation li
+{
+	padding: 0.2em;
+}
+
+.navigation .level-2
+{
+	padding-left: 1em;
+	
+}
+
+.navigation .level-3
+{
+	padding-left: 2em;
+	font-size: 90%;
+	font-weight: bold;
+}
+
+.navigation .level-4
+{
+	padding-left: 3.5em;
+	font-size: 90%;
+}
+
+.navigation a
+{
+	background: transparent;
+	padding: 0;
+	color: #222;
+}
