@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+
+		<link rel="shortcut icon" href="../favicon.ico">
+
+		<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css">
+
+      	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+      	<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+      	<link rel="stylesheet" href="../css/page.css">
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+		<script>hljs.initHighlightingOnLoad();</script>
+		<title>Flic Hub Studio Tutorial</title>
+
+
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-S50174KZHE"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+
+		  gtag('config', 'G-S50174KZHE');
+		</script>
+
+	</head>
+	<body>
+		<div class="page">
+
+			<a href="../../index.html">Back to Flic Hub Studio</a>
+			
+			<h1>Flic Hub Studio Tutorial</h1>
+
+			<h2>Introduction</h2>
+
+			<p>The Flic Hub Studio lets you connect to your Flic Hub using our <a href="../../index.html" target="_blank">online IDE</a> to write packages that can run on the hub.</p>
+			<p>Packages are written in Javascript and are stored locally on the hub.</p>
+
+			<p>The connection between the online IDE and the Flic Hub happens locally over a websocket so to connect you need to be on the same LAN as the Hub and connect using its local IP address. The local IP address can be found by connecting to the hub using the Flic app and check under Settings, or by finding it through your routers admin interface.</p>
+			<a name="setup" style="visibility: hidden;">dsa</a>
+			<h2>Setup</h2>
+			<p>To access the Flic Hub Studio, please follow these steps:</p>
+
+			<ol>
+
+				<li>
+					<b>Power the Flic Hub</b><br>
+					Power the Flic Hub using the USB port with a power adapter with at least 2A output.<br><br>
+				</li>
+				<li>
+					<b>Connect the Flic Hub to your network</b><br>
+					Either plug in the Ethernet cable or configure WiFi using the Flic app.<br>
+					Get the Flic app: <a href="https://apps.apple.com/se/app/flic-app/id977593793" target="_blank">iOS</a>
+					<a href="https://play.google.com/store/apps/details?id=io.flic.app" target="_blank">Android</a><br><br>
+				</li>
+				<li>
+					<b>Enable SDK Access</b><br>
+					Using the Flic app, connect to the Hub and make sure "Enable SDK Access" is turned on<br>
+					If you do not see this option you need to update your Hubs firmware.<br>
+					If the app tells you a firmware update is needed, use the "Update Firmware" button below.<br><br>
+				<li>
+					<b>Make sure you are on the same local network</b><br>
+					Make sure your computer is connected to the same local network as the Flic Hub.<br><br>
+				</li>
+
+				<li>
+					<b>Access the Hub using the <a href="../../index.html" target="_blank">Online IDE</a></b><br>
+					If the Flic Hub is online and on the same local network it should appear in the list.<br>
+					If the Hub does not show up, you can enter the IP address which can be found on the Hub settings view in the Flic app.<br>
+					The password is written on the label on the Flic Hub.<br>
+					Happy coding!<br><br>
+				</li>
+			</ol>
+
+			<h2>Packages</h2>
+			<p>The code you write on the hub are divided into packages. Each package has a <code>main.js</code> which will be executed when the package runs.</p>
+
+			<h2>Modules</h2>
+
+			<p>Different hub features, such as button management, network, http etc, are accessed through modules.</p>
+			<p>You can include a module using the <code>require();</code> semantics:</p>
+
+			<pre><code>var buttonManager = require("buttons");</code></pre>
+
+			<p>More information about available modules can be fount in the <a href="../documentation/index.html" target="_blank">Flic Hub Studio Module Documentation</a>.</p>
+
+			<h2>Run Modes</h2>
+
+			<p>You can choose to run packages with or without the "Restart after crash" flag.</p>
+			<p>This flag will ensure that the package is re-run after a crash or boot.</p>
+
+			<h2>Command Prompt</h2>
+
+			<p>A simple command prompt is available through the online IDE with some simple commands to manage buttons and WiFi configurations.</p>
+
+			<h2>Examples</h2>
+
+			<p>List all buttons and print all the information in JSON format to the console:</p>
+
+			<pre><code>const buttonManager = require("buttons");
+let buttons = buttonManager.getButtons();
+
+for (var i = 0; i < buttons.length; i++) {
+	let button = buttons[i];
+	console.log(JSON.stringify(button));
+}</code></pre>
+			<p>&nbsp;</p>
+			<p>Listen for click events and send a request with button serial number and click type to specified endpoint:</p>
+
+			<pre><code>const buttonManager = require("buttons");
+const http = require("http");
+const url = "YOUR_URL_HERE";
+
+buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
+	let button = buttonManager.getButton(obj.bdaddr);
+	let clickType = obj.isSingleClick ? "click" : obj.isDoubleClick ? "double_click" : "hold";
+
+	http.makeRequest({
+		url: url,
+		method: "POST",
+		headers: {"Content-Type": "application/json"},
+		content: JSON.stringify({"serial-number": button.serialNumber, "click-type": clickType}),
+	}, function(err, res) {
+		console.log("request status: ", err, res);
+	});
+});
+
+console.log("Started");</code></pre>
+
+			<p>&nbsp;</p>
+			<p>Toggle a Matter On/Off device on button click</p>
+
+			<pre><code>const buttonManager = require("buttons");
+const matter = require('matter');
+
+let nodeId = "MATER_NODE_ID";
+let endpointId = "MATER_ENDPOINT_ID";
+
+buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
+	matter.sendCommand(nodeId, endpointId, "On/Off", "Toggle", {}, (error, response) => console.log(JSON.stringify(error) + ", " + JSON.stringify(response))); // Toggle
+});
+
+console.log("Started");</code></pre>
+
+		<p class="footer">Copyright &copy; 2020-2025 Shortcut Labs AB</p>
+
+		</div>
+
+	</body>
+</html>

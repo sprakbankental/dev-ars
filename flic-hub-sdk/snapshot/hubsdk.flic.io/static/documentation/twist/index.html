@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		
+		<link rel="shortcut icon" href="../../favicon.ico">
+
+		<link rel="stylesheet"
+      href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css">
+
+      	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+      	<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+      	<link rel="stylesheet" href="../../css/page.css">
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+		<script>hljs.initHighlightingOnLoad();</script>
+		<title>Flic Hub Studio Documentation – Matter</title>		
+
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-S50174KZHE"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+
+		  gtag('config', 'G-S50174KZHE');
+		</script>
+		
+	</head>
+	<body>
+		<div class="page">
+
+			<a href="../../../index.html">Back to Flic Hub Studio</a>
+
+			<h1>Flic Hub Studio<br>Flic Twist Guide</h1>
+
+			
+
+			<h2>Introduction</h2>
+
+			<p>With the addition of the <code>flicapp</code> module, you are now able to use Flic Twist as an input for your Flic Script apps.</p>
+
+			<p>In order to seamlessly continue to work with the rest of your smart home devices that you might have assigned to other triggers on the Flic Twist, we introduce the concept of Virtual Devices. A Virtual Device is handled by the Flic Hub firmware just like any other supported real device, but its functionality is implemented by the user in the Hub SDK, typically by writing some kind of bridge software that sends commands and receives update events over the LAN to/from the real device. If for example the brightness of a (real) light is changed by some external means, it is possible to tell the Flic Hub firmware from javascript about the new brightness level, which the hub then forwards to the Flic Twist, so that the LED status can update accordingly. That way when you twist it, it will start from the correct position.</p>
+
+			<p>We are also adding a "message" action that can be used to send arbitrary strings to your scripts whenever the action is triggered. The intended use case is to be able to trigger custom code also for Push/Double Push in the Selector feature or perform some action when a specific point is reached in Advanced Dimming or Scene Blender.</p>
+
+			<p>The virtual devices can be created in the Flic App and be set to be controlled by a Flic Twist as follows:</p>
+
+			<p>
+				<img src="../../img/twist/img_9799.png">
+				<img src="../../img/twist/img_9797.png">
+			</p>
+
+			<p>Using this piece of code, updates are received in your javascript code after configuring a virtual device to be triggered in the Flic App for a specific Flic Twist:</p>
+
+
+			<pre><code>const flicapp = require("flicapp");
+
+flicapp.on("virtualDeviceUpdate", (metaData, values) => {
+	// The values object can contain hue, saturation, brightness, colorTemperature, volume, position (for blinds)
+	console.log(`Twist ${metaData.buttonId} updated virtual device ${metaData.virtualDeviceId} of type ${metaData.dimmableType} with these values: ${JSON.stringify(values)}`);
+});</code></pre>
+
+			<p>When a device is modified externally, we use this function to inform the system of the change:</p>
+
+			<pre><code>flicapp.virtualDeviceUpdateState(dimmableType, virtualDeviceId, values);</code></pre>
+
+			<p>The <code>dimmableType</code> can be either "Light", "Speaker" or "Blind". The <code>values</code> is an object containing at least one of the fields mentioned above that is appropriate for the corresponding <code>dimmableType</code>. For example:</p>
+
+			<p>The values themselves are always floating point numbers between 0 and 1.
+
+	Configure an action message to be triggered by assigning the following action in the Flic app:</p>
+
+			<p>
+				<img src="../../img/twist/img_9798.png">
+			</p>
+
+			<p>The action messages are easy to receive, just register a listener as follows:</p>
+
+
+			<pre><code>flicapp.on("actionMessage", message => console.log(`Got a message: ${message}`));</code></pre>
+
+
+			<p>Find the full documentation here:</p>
+
+			<p><a href="../index.html#flicapp">Documentation</a></p>
+
+			
+		</div>
+
+	</body>
+</html>

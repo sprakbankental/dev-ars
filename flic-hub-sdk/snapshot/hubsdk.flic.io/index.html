@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<script src="static/codemirror/lib/codemirror.js"></script>
+		<script src="static/codemirror/addon/edit/closebrackets.js"></script>
+		<script src="static/codemirror/mode/javascript/javascript.js"></script>
+
+		<link rel="stylesheet" href="static/codemirror/lib/codemirror.css">
+		<link rel="stylesheet" href="css/codemirror-user.css">
+		<link rel="stylesheet" href="css/main.css%3Fv=4.css">
+		<link rel="stylesheet" href="css/jquery.contextMenu.css">
+		<link href="https://fonts.googleapis.com/css?family=Rubik:400,500,700" rel="stylesheet">
+		<script src="js/jquery.min.js"></script>
+		<script src="js/resize.js"></script>
+		<script src="js/jssdkauth.js"></script>
+		<script src="js/jssdkauth_hl.js"></script>
+		<script src="js/jszip.js"></script>
+		<script src="js/editor.js%3Fv=3"></script>
+		<script src="js/jquery.contextMenu.js"></script>
+		<link rel="shortcut icon" href="static/favicon.ico">
+		<title>Flic Hub Studio</title>
+
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-S50174KZHE"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+
+		  gtag('config', 'G-S50174KZHE');
+		</script>
+	</head>
+	<body>
+		<div class="login" style="display: none;">
+			
+			<div class="login-inner">
+				<form action="index.html" method="post" autocomplete="off">
+					<input autocomplete="false" name="hidden" type="text" style="display:none;">
+					<input style="display:none" type="text" name="fakeusernameremembered"/>
+<input style="display:none" type="password" name="fakepasswordremembered"/>
+					
+
+					<div class="login-info">
+
+						<div class="pane">
+							<div class="about">
+								<h2>Getting started?</h2>
+								<p>Read our tutorial with easy-to-use examples to get started or check out the full documentation.</p>
+								<a class="small-button" href="static/tutorial/index.html" target="_blank">Tutorial</a>
+								<a class="small-button" href="static/documentation/index.html" target="_blank">Documentation</a>
+							</div>
+						</div>
+
+						<div class="pane news">
+
+							<h2>News</h2>
+
+							<div class="item">
+								<h3>ChatGPT Assistant</h3>
+								<p>You can now use our custom Flic Hub Studio Assistant for ChatGPT to write scripts.</p>
+								<a class="small-button" href="https://chat.openai.com/g/g-6878f7d025208191a0eed994f9e46fb6-flic-hub-studio-assistant" target="_blank">Launch Assistant</a>
+							</div>
+
+							
+
+							<div class="item">
+								<h3>Flic Twist support</h3>
+								<p>You can now use Flic Twist as an input in your Flic Scripts. Get started here:</p>
+								<a class="small-button" href="static/documentation/twist/index.html" target="_blank">Flic Twist Guide</a>
+							</div>
+
+							
+
+							<div class="item">
+								<h3>Matter support</h3>
+								<p>You can now access the full Matter Controller API with Flic Script! Get started here:</p>
+								<a class="small-button" href="static/documentation/matter/index.html" target="_blank">Matter Guide</a>
+							</div>
+
+						</div>
+
+						
+
+					</div>
+
+					<div class="login-form pane">
+
+						<h1>Flic Hub Studio</h1>
+
+						<div class="step-hub-select">
+
+							<div class="form-group">
+								<a href="index.html#" class="reload-hubs">
+									<svg  viewBox="0 0 16 16" class="bi bi-arrow-counterclockwise" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+		  								<path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/>
+		  								<path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/>
+									</svg>
+								</a>
+								<h4>Hubs on Network:</h4>
+								<ul class="hub-network-list">
+									
+									
+								</ul>
+
+								<p class="no-hubs-found">No Hubs found on your local network.</p>
+							</div>
+
+							<small><p class="">Can’t see your Hub? <a href="static/tutorial/index.html#setup">Follow these steps!</a></p></small>
+
+							<div class="form-group">
+								<h4>IP Address:</h4>
+
+								<input type="text" name="ip" class="ip-field text" value="" autocomplete="no" />
+
+								<!--<a href="#" class="login-next">Next</a>-->
+							</div>
+
+						</div>
+
+						<div class="step-password">
+							<div class="form-group">
+								<h4>Password:</h4>
+								<input type="password" name="password" class="text" value="" />
+							</div>
+
+							<div class="form-group" style="margin-bottom: 10px;">
+								<label><input type="checkbox" name="remember" value="true" /> Remember me</label>
+							</div>
+
+							<button type="submit" class="login-button">Connect</button>
+							<div class="loading"></div>
+
+							<div class="login-error">&nbsp;</div>
+						</div>
+
+						
+					
+					</div>
+
+					
+
+					
+				</form>
+
+				
+			</div>
+		</div>
+		<div class="ide" style="display: none;">
+
+			<div class="pane-right-wrap">
+				<div class="pane-right" id="editor">
+				
+
+				</div>
+			</div>
+
+			<div class="pane-bottom-wrap">		
+				<div class="pane-bottom">
+					<a href="index.html" title="Clear console" class="clear"></a>
+					
+
+					<ul class="console-tabs">
+						<li class="active console-tab"><a href="index.html#">CONSOLE</a></li>
+						<li class="cli-tab"><a href="index.html#">TERMINAL</a></li>
+					</ul>
+					<div class="console log"></div>
+					<div class="console command-prompt"></div>
+
+					<input type="text" class="command-line">
+				</div>
+			</div>
+
+			<div class="pane-left-wrap">
+				<div class="pane-left">
+					<div class="current-hub">
+						<span class="populate-firmware"></span>
+						<h2 class="populate-hub-serial"></h2>
+					</div>
+
+					<div class="packages section">
+						<h3>MODULES</h3>
+						<a href="index.html" class="runtime play" title="Cmd/Ctrl + B to run. Cmd/Ctrl + . to stop"></a>
+						<div class="package-list-wrap">
+							<select id="package-list"></select>
+						</div>
+						<label class="restart-after-crash"><input type="checkbox" id="restart-after-crash-input"> Restart after crash or reboot</label>
+					</div>
+					<div class="section">
+						<h3>BUTTONS</h3>
+
+						<a href="index.html#" class="small-button start-button-scan">+ Add</a> 
+						<a href="index.html#" class="small-button list-buttons">List</a>
+						<a href="index.html#" class="small-button export-buttons">Export</a>
+						<a href="index.html#" class="small-button clear-buttons">Clear</a>
+						
+						
+					</div>
+
+					
+
+					<div class="files">
+						<h3>FILES</h3>
+						
+						<ul id="file-list">
+							
+						</ul>
+						<a href="index.html#" class="small-button create-package">+ Create Module</a>
+					</div>
+
+
+
+					
+
+				</div>
+				<div class="pane-left-bottom-wrap">
+					<ul class="pane-left-bottom">
+						<li><a href="static/tutorial/index.html" target="_blank" class="">TUTORIAL</a></li>
+						<li><a href="static/documentation/index.html" target="_blank" class="">DOCUMENTATION</a></li>
+						<li><a href="index.html#" class="logout-button">DISCONNECT</a></li>
+					</ul>
+				</div>
+			</div>
+
+			
+			<div class="slider-horizontal-wrap">
+				<div class="slider-horizontal"></div>
+			</div>
+			<div class="slider-vertical"></div>
+
+		</div>
+
+
+
+		<a href="https://chat.openai.com/g/g-6878f7d025208191a0eed994f9e46fb6-flic-hub-studio-assistant" 
+		   target="_blank" 
+		   class="chatgpt-launch">
+		  Code with ChatGPT
+		</a>
+
+
+		
+	</body>
+</html>

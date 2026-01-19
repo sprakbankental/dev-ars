@@ -1,0 +1,1998 @@
+var wsReq = null;
+const DEBUG = window.location.href.indexOf("debug") != -1;
+
+(function() {
+
+	var hideToolsPackage = !DEBUG;
+	var toolsPackageName = "__tools"
+	var hasCreatedToolsPackage = false;
+
+	var ip = null;
+	var port = 1111;
+	var files = [];
+	
+	var currentFilePath = null;
+	var currentPackageName = null;
+
+	var selectFilePathAfterUpdate = null;
+	
+	var files = null;
+	var packages = null;
+
+	var fileCache = {};
+
+	var wsCallbackStack = [];
+	var commandHistory = [];
+	var commandHistoryIndex = 1;
+	var commandHistoryMaxLength = 500;
+
+	var connected = false;
+	var connecting = false;
+	var ws = null;
+	var localConnection;
+	var sdkApiClient = null;
+
+	var STATE_DISCONNECTED = 0;
+	var STATE_CONNECTING = 1;
+	var STATE_CONNECTED = 2;
+	var CONSOLE_MODE_CONSOLE = 0;
+	var CONSOLE_MODE_CLI = 1;
+
+	var currentState = STATE_DISCONNECTED;
+
+	var myCodeMirror = null;
+	var contextMenu = null;
+
+	var consoleMode = CONSOLE_MODE_CONSOLE;
+
+	var passwordRequestFn = null;
+
+	var consoleHistorySize = 100;
+	var consoleHistory = {};
+
+	var webSocketConnectTimer = null;
+
+	var temporaryPasswordHash = null;
+
+	var hubSerialNumber = null;
+
+	var remember = false;
+
+	
+
+	$.fn.selectRange = function(start, end) {
+		if(end === undefined) {
+			end = start;
+		}
+		return this.each(function() {
+			if('selectionStart' in this) {
+				this.selectionStart = start;
+				this.selectionEnd = end;
+			} else if(this.setSelectionRange) {
+				this.setSelectionRange(start, end);
+			} else if(this.createTextRange) {
+				var range = this.createTextRange();
+				range.collapse(true);
+				range.moveEnd('character', end);
+				range.moveStart('character', start);
+				range.select();
+			}
+		});
+	};
+
+	$(function () {
+
+		if(window.localStorage.getItem('ip') && window.localStorage.getItem('hashedPassword')) {
+			$('[name=ip]').val(window.localStorage.getItem('ip'));
+			$('[name=password]').val('__hashed');
+		}
+
+		var refreshNetworkHubsList = function() {
+
+			$('.reload-hubs').addClass('spin');
+			
+
+			$.get('//api.flic.io/api/v1/hub/ip', function(data) {
+				
+				$('.reload-hubs').removeClass('spin');
+
+				var filtered_ips = data.filter(function(a) { return new Date() - new Date(a.ip_timestamp) < (1000*60*60*26)});
+				var sorted_ips = filtered_ips.sort(function(a, b) { return new Date(a.ip_timestamp) > new Date(b.ip_timestamp) ? -1 : 1 });
+
+				if (sorted_ips.length == 0) {
+					$('.hub-network-list').hide();
+					$('.no-hubs-found').show();
+				} else {
+					$('.hub-network-list').show();
+					$('.no-hubs-found').hide();
+
+					$('.hub-network-list').empty();
+
+					if (sorted_ips.length > 0) {
+
+
+						for (var i = 0; i < sorted_ips.length; i++) {
+
+							(function(hub) {
+
+								var $li = $('<li><a href="#" data-ip="' + hub.local_ip + '">' + hub.serial_number + '<span class="status"></span><span class="ip">' + hub.local_ip + '</span></a></li>');
+
+								$('.hub-network-list').append($li);
+								
+								createConnection(hub.local_ip, function(connection, dataChannel) {
+									connection.oniceconnectionstatechange = function(e) {
+										if (connection.iceConnectionState == 'connected') {
+											$li.find('.status').addClass('online');
+											connection.close();
+										} 
+									};
+
+									setTimeout(function() {
+										if (!$li.find('.status').hasClass('online')) {
+											$li.find('.status').addClass('offline');
+										}
+
+										connection.close();
+									}, 500);
+								});
+
+
+							})(sorted_ips[i]);
+						}
+
+						$('.hub-network-list a').click(function (e) {
+							e.preventDefault();
+
+							$('.ip-field').val($(this).data('ip'));
+						});
+					} else {
+						var $li = $('<li class="no-hubs">No hubs found on network</li>');
+
+						$('.hub-network-list').append($li);
+					}
+				}
+			});
+
+			
+
+		}
+
+
+		refreshNetworkHubsList();
+
+		$('.reload-hubs').click(function (e) {
+			e.preventDefault();
+			refreshNetworkHubsList();
+		});
+		
+
+		$('.login-button').click(function (e) {
+			e.preventDefault();
+
+			var ip = $('[name=ip]').val();
+			var password = $('[name=password]').val();
+
+			remember = $('[name=remember]').val() == "true";
+
+			if (password == "") {
+				$('.login-error').text("Empty password not allowed").show();
+				return;
+			}
+
+			var hashedPassword = null;
+
+			if (password == '__hashed') {
+				hashedPassword = fromBase64(window.localStorage.getItem('hashedPassword'));
+				password = null;
+			}
+
+			connect(ip, port, password, hashedPassword);
+
+			return false;
+		});
+
+		$('.logout-button').click(function (e) {
+			e.preventDefault();
+			disconnect();
+			return false;
+		});
+
+		$('.runtime').click(function (e) {
+			e.preventDefault();
+
+			if (!getCurrentPackage()) {
+				return;
+			}
+
+			if (!getCurrentPackage().running) {
+				runCurrentPackage();
+			}
+			else
+			{
+				killCurrentPackage();
+				
+			}
+			
+			return false;
+		});
+
+		$('#package-list').change(function () {
+			selectPackage($('#package-list').val());
+		});
+
+		$('.clear').click(function (e) {
+			e.preventDefault();
+			if (consoleMode == CONSOLE_MODE_CONSOLE) {
+				clearLog(false);
+			} else {
+				clearPromptLog();
+			}
+			
+			
+		});
+
+		$('.command-line').keydown(function (e) {
+			if (e.keyCode == 38 || e.keyCode == 40) {
+				e.preventDefault();
+
+
+				if ((commandHistoryIndex == 0 || commandHistoryIndex == 1) && e.keyCode == 40) {
+					commandHistoryIndex = 1;
+					$('.command-line').val('');
+					return;
+				}
+
+				commandHistoryIndex += e.keyCode == 38 ? -1 : 1;
+
+				if (commandHistoryIndex > 0) {
+					commandHistoryIndex = 0;
+				}
+
+				if (commandHistoryIndex < -commandHistory.length+1) {
+					commandHistoryIndex = -commandHistory.length+1;
+				}
+
+				var currentIndex = (commandHistory.length + commandHistoryIndex) - 1;
+				var prevCommand = commandHistory[currentIndex];
+
+				if (prevCommand != undefined) {
+					$('.command-line').val(prevCommand);
+					setTimeout(function () {
+						$('.command-line').selectRange($('.command-line').val().length, $('.command-line').val().length);
+					}, 0);	
+				}			
+			}
+		});
+
+		$('.command-line').keypress(function (e) {
+			if (e.keyCode == 13) {
+				var rawCommand = $(this).val().trim();
+				var components = rawCommand.split(" ");
+				var cmd = components[0];
+				var args = components.splice(1);
+
+				if (cmd.length == 0) {
+					return;
+				}
+
+				if (consoleMode == CONSOLE_MODE_CLI) {
+					logCommandPrompt("> " + rawCommand)
+				}
+				
+				$('.command-line').val("");
+
+				if (commandHistory[commandHistory.length-1] != rawCommand) {
+					commandHistory.push(rawCommand);
+				}
+				
+				while (commandHistory.length > commandHistoryMaxLength) {
+					commandHistory.shift();
+				}
+
+				commandHistoryIndex = 1;
+
+				if (consoleMode == CONSOLE_MODE_CONSOLE) {
+
+					if (getCurrentPackage() == null) {
+						log("No package selected");
+						return;
+					}
+
+					
+					wsReq({"op": "eval", "package": getCurrentPackage().name, "script": rawCommand}, function(res) {
+						if (!res.success) {
+							log("Package not running");
+						}
+					});
+					
+				} else {
+
+					cmd = cmd.toLowerCase();
+
+					if (cmd == "help") {
+
+						var commands = [
+							["scan", "Start scanning for single button"],
+							["bulkScan", "Start scanning for multiple buttons"],
+							["stopScan", "Stop scanning for buttons"],
+							["buttons", "List all buttons"],
+							["deleteButton [bdaddr]", "Delete button"],
+							["clearAllButtons", "Delete all buttons"],
+							["network", "Network configuration"],
+							["buttonevents [on|off]", "Turn logging of button events on or off"],
+							["exportbuttons", "Export all button pairings"],
+							["importbuttons", "Import button pairings"],
+							["setpw [password]", "Change password of hub"],
+							["tutorial", "Open the Flic Hub SDK tutorial"],
+						];
+
+						var str = indentedString(commands);
+
+						logCommandPrompt(str);
+					} else if (cmd == "reload") {
+
+
+						createToolsPackage();
+						
+					} else if (cmd == "removetools") {
+
+						var f = getFile(toolsPackageName);
+
+						deleteFile(f, false, function() {
+							updateUI();
+						});
+						
+						
+					} else if (cmd == "scan") {
+						runToolCommand("initScan");
+					} else if (cmd == "bulkscan") {
+						runToolCommand("initBulkScan");
+					} else if (cmd == "stopscan") {
+						runToolCommand("stopScan");
+					} else if (cmd == "connect") {
+							
+						if (args.length == 0) {
+							logCommandPrompt("Missing argument: button id");
+						} else {
+							wsReq({"op": "connect", "button": args[0]});
+						}
+
+					} else if (cmd == "disconnect") {
+
+						if (args.length == 0) {
+							logCommandPrompt("Missing argument: button id");
+						} else {
+							wsReq({"op": "disconnect", "button": args[0]});
+						}
+
+					} else if (cmd == "forget") {
+
+						if (args.length == 0) {
+							logCommandPrompt("Missing argument: button id");
+						} else {
+							wsReq({"op": "forget", "button": args[0]});
+						}
+
+					} else if (cmd == "network") {
+
+						if (args.length == 0) {
+
+							var wifiCommands = [
+								["network scan", "Scan for WiFi networks"],
+								["network list", "List configured WiFi networks"],
+								["network state", "Get current network state"],
+								["network connect [ssid] [password]", "Connect to an open WiFi hotspot"],
+								["network add [ssid] [password]", "Add WiFi network without connecting"],
+								["network remove [ssid]", "Remove WiFi network"],
+								["network clear", "Remove all WiFis"],
+							];
+
+							var str = indentedString(wifiCommands);
+
+							logCommandPrompt(str);
+
+						} else {
+							
+							if (args[0] == "scan") {
+
+								runToolCommand("wifiScan");
+
+							} else if (args[0] == "list") {
+
+								runToolCommand("wifiList");
+
+							} else if (args[0] == "clear") {
+
+								runToolCommand("wifiClear");
+
+							} else if (args[0] == "connect") {
+
+								var ssid = args[1];
+								var psk = args[2];
+
+								runToolCommand("wifiConnect", {"ssid": ssid, "psk": psk});
+
+							} else if (args[0] == "add") {
+
+								var ssid = args[1];
+								var psk = args[2];
+
+								if (!ssid) {
+									logCommandPrompt("Please specify ssid");
+								} else {
+									var wifi = psk ? {"ssid": ssid, "psk": psk, "open": false, "wpaPsk": true} : {"ssid": ssid, "open": true, "wpaPsk": false, "psk": null};
+									runToolCommand("wifiAdd", wifi);	
+								}
+
+								
+
+							} else if (args[0] == "remove") {
+								var ssid = args[1];
+								runToolCommand("wifiRemove", {"ssid": ssid});
+							} else if (args[0] == "state") {
+								runToolCommand("networkState");
+							}
+						}
+
+					} else if (cmd == "buttons") {
+
+						runToolCommand("knownButtons");
+
+					} else if (cmd == "deletebutton") {
+						var bdaddr = args[0];
+
+						if (!bdaddr) {
+							logCommandPrompt("bdaddr missing");
+						} else {
+							runToolCommand("deleteButton", {"bdaddr": bdaddr});
+						}
+
+						
+
+					} else if (cmd == "clearallbuttons") {
+						
+
+						if(confirm("Are you sure you want to delete all buttons?")) {
+							runToolCommand("clearAllButtons");
+						}
+
+
+					} else if (cmd == "update") {
+
+						updateUI();
+
+					} else if (cmd == "tutorial") {
+						window.open("/static/tutorial/", "_blank");
+
+					} else if (cmd == "buttonevents") {
+						var mod = args[0];
+
+						if (mod == "on") {
+							runToolCommand("buttonEventsOn");
+						} else if (mod == "off") {
+							runToolCommand("buttonEventsOff");
+						} else {
+							logCommandPrompt("Supply \"on\" or \"off\" parameter");
+						}
+
+					} else if (cmd == "exportbuttons") {
+						runToolCommand('exportPairings');
+					} else if (cmd == "importbuttons") {
+						importButtonPairings();
+					} else if (cmd == "setpw") {
+
+
+						var pw = args[0];
+
+						if (!pw) {
+							logCommandPrompt("Missing argument: password");
+						} else {
+
+							var salt = new Uint8Array(16);
+							window.crypto.getRandomValues(salt);
+							var hash = jssdk_scrypt(pw, salt)
+
+							function toHexString(byteArray) {
+								return Array.prototype.map.call(byteArray, function(byte) {
+									return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+								}).join('');
+							}
+
+							var saltHex = toHexString(salt);
+							var hashHex = toHexString(hash);
+
+							temporaryPasswordHash = hash;
+
+							wsReq({
+								"op":"setNewPwd",
+								"salt":saltHex,
+								"hash":hashHex
+							});
+						}
+
+
+					} else {
+						logCommandPrompt("Unknown command - type help to print a list of available commands");
+					}
+
+				}
+
+
+				
+			}
+		});
+
+		$('.console-tabs li').click(function (e) {
+			e.preventDefault();
+			
+			
+
+			setConsoleMode($(this).index());
+			
+		});
+
+		function setConsoleMode(_consoleMode) {
+			consoleMode = _consoleMode;
+
+			$('.console-tabs li').removeClass("active");
+			$('.console-tabs li').eq(consoleMode).addClass('active');
+
+			if (consoleMode == CONSOLE_MODE_CONSOLE) {
+				$(".console.log").show();
+				$(".console.command-prompt").hide();
+				$(".command-line").attr({"placeholder": ""});
+			} else {
+				$(".console.log").hide();
+				$(".console.command-prompt").show();
+				$(".command-line").attr({"placeholder": "help"});
+			}
+		}
+
+
+		myCodeMirror = CodeMirror(document.getElementById("editor"), {
+			lineNumbers: true,
+			height: "auto",
+			autoCloseBrackets: true,
+			mode: "application/json",
+			tabSize: 2,
+			indentWithTabs: true
+		});
+
+		myCodeMirror.on("change", function(a,b) {
+
+			if (b.origin == "+input") {
+
+				var firstChange = !fileCache[currentFilePath];
+
+				
+				fileCache[currentFilePath] = myCodeMirror.getDoc().getValue();
+				saveFileCache();
+
+				if (firstChange) {
+					updateUI();
+				}
+			}
+		});
+
+		contextMenu = $.contextMenu({
+			selector: '#file-list li',
+			zIndex: 10,
+			items: {
+				rename: {
+					name: "Rename...",
+					callback: function(key, opt){
+						
+
+						var file = getFile(opt.$trigger.attr("data-path"));
+
+						renameFile(file);
+					}
+				},
+				delete: {
+					name: "Delete",
+					callback: function(key, opt){
+
+						var file = getFile(opt.$trigger.attr("data-path"));
+						deleteFile(file);
+					}
+				},
+				revert: {
+					name: "Revert",
+					callback: function(key, opt){
+
+						if (confirm("Do you want to discard unsaved changes to this file?")) {
+							var file = getFile(opt.$trigger.attr("data-path"));
+							delete fileCache[file.path+file.name];
+							saveFileCache();
+							selectFile(file.path+file.name);
+						}
+
+					}
+				},
+				newfile: {
+					name: "New File",
+					callback: function(key, opt){
+
+						
+						createFile(opt.$trigger.attr("data-package") + "/");
+					}
+				},
+				download: {
+					name: "Download Module",
+					callback: function(key, opt){
+
+						
+						downloadPackage(opt.$trigger.attr("data-package") + "/");
+					}
+				}
+			}
+		});
+
+		$('.create-package').click(function (e) {
+			e.preventDefault();
+			createPackage();
+			return false;
+		});
+
+		$('.start-button-scan').click(function (e) {
+			e.preventDefault();
+			setConsoleMode(CONSOLE_MODE_CLI);
+			runToolCommand("initScan");
+		});
+
+		$('.export-buttons').click(function (e) {
+			e.preventDefault();
+			runToolCommand('exportPairings');
+		});
+
+		$('.list-buttons').click(function (e) {
+			e.preventDefault();
+			setConsoleMode(CONSOLE_MODE_CLI);
+			runToolCommand("knownButtons");
+		});
+
+		$('.clear-buttons').click(function (e) {
+			e.preventDefault();
+			if(confirm("Are you sure you want to delete all buttons?")) {
+				runToolCommand("clearAllButtons");
+			}
+		});
+
+		
+
+
+
+		if (window.localStorage.getItem('autoconnect')) {
+			var ip = window.localStorage.getItem('ip');
+			var hashedPassword = fromBase64(window.localStorage.getItem('hashedPassword'));
+
+			if (ip && hashedPassword) {
+				connect(ip, port, null, hashedPassword, true)	
+			} else {
+				disconnect();
+			}
+		} else {
+			$('.login').show();
+		}
+	});
+
+	
+
+	var sendFn = function(data) {
+		ws.send(data.slice().buffer);
+	};
+
+	var authComplete = function(success, salt, hashedPassword) {
+
+		if (success) {
+			
+			if (remember) {
+				window.localStorage.setItem("ip", ip);
+				window.localStorage.setItem('hashedPassword', toBase64(hashedPassword));
+			}
+
+			window.localStorage.setItem('autoconnect', 1);
+			
+			$('.login').hide();
+			$('.ide').show();
+		} else {
+			$('.login-error').text("Wrong password").show();
+			disconnect();
+		}
+
+		passwordRequestFn = null;
+	};
+
+	var onDecryptedMessage = function(string) {
+		
+		var data = JSON.parse(string);
+
+		if (data.op == 'init') {
+
+			var lastPackageName = window.localStorage.getItem('package');
+			var lastFilePath = window.localStorage.getItem('file');
+			hubSerialNumber = data.hubSerialNumber;
+			restoreFileCache();
+			reloadData(data);
+
+			if (Object.keys(fileCache).length > 0) { // upon restore, select first file from cache
+				var firstChangedFile = Object.keys(fileCache)[0];
+				for (var i = 0; i < files.length; i++) {
+					var file = files[i];
+					if (file.path + file.name == firstChangedFile) {
+						lastFilePath = file.path + file.name;
+						break;
+					}
+				}
+			}
+
+			$('.populate-hub-serial').text(data.hubSerialNumber);
+			$('.populate-firmware').text(data.hubFirmwareVersion);			
+			
+			var lastPackage = getPackage(lastPackageName);
+
+			if (lastPackage) {
+				selectPackage(lastPackage.name);
+			}
+			
+			if (lastFilePath) {
+				selectFile(lastFilePath);
+			}
+			
+		} else if (data.op == 'result') {
+
+			var cb = wsCallbackStack[0];
+			wsCallbackStack.shift();
+
+			if (cb) {
+				cb(data);
+			}
+
+		} else if (data.op == 'print') {
+
+			if (data.package == toolsPackageName) {
+				if (data.text.startsWith("EXPORT_PAIRINGS ")) {
+
+					var pairings = data.text.substring(16, data.text.length);
+
+					exportButtonPairings(pairings);
+
+				} else if (data.text != "NO_PRINT") {
+					logCommandPrompt(data.text);
+				}
+			} else {
+				if (data.text.startsWith("__POPUP ")) {
+					var text = data.text.substring(8, data.text.length);
+					showTextPopup(text);
+				} else {
+					log(data.text, data.package);
+				}
+			}
+
+			
+
+		} else if (data.op == 'exited') {
+			var package = packageFromName(data.package);
+			if (package) {
+
+				if (data.restarting) {
+					package.running = true;
+				} else {
+					package.running = false;
+				}
+				
+			}
+			
+			updateUI();
+
+		} else if (data.op == 'updatedTree') {
+			reloadData(data);
+		} else if (data.op == 'processStarted') {
+			var package = getPackage(data.pkg);
+			if (package) {
+				package.running = true;
+			}
+			
+			updateUI();
+
+		} else if (data.op == 'setNewPwdDone') {
+			if (!data.success) {
+				logCommandPrompt("Could not set password");
+			} else {
+				logCommandPrompt("Password updated");
+				if (temporaryPasswordHash) {
+					temporaryPasswordHash[63] &= 0x7f;
+					window.localStorage.setItem('hashedPassword', toBase64(temporaryPasswordHash));
+					temporaryPasswordHash = null;
+				}
+			}
+
+		}
+	};
+
+	var toBase64 = function (u8) {
+		return btoa(String.fromCharCode.apply(null, u8));
+	}
+
+	var fromBase64 = function (str) {
+		return atob(str).split('').map(function (c) { return c.charCodeAt(0); });
+	}
+
+	var disconnect = function(error) {
+
+		
+		window.localStorage.removeItem('autoconnect');
+		
+
+		saveFileCache();
+
+		$('.ide').hide();
+		$('.login').show();
+
+		if (ws) {
+			ws.onerror = null;
+			ws.onclose = null;
+			ws.close();
+			ws = null;
+		}
+
+		if (localConnection) {
+			localConnection.onconnectionstatechange = null;
+			localConnection.oniceconnectionstatechange = null;
+			localConnection.close();
+			localConnection = null;
+		}
+
+		if (error) {
+			$('.login-error').text(error).show();
+		}
+
+		$('.loading').css({"visibility": "hidden"});
+		
+		files = [];
+		clearLog();
+		clearPromptLog();
+		currentFilePath = null;
+		currentPackageName = null;
+		files = null;
+		packages = null;
+		wsCallbackStack = [];
+		commandHistory = [];
+		commandHistoryIndex = 1;
+		selectFilePathAfterUpdate = null;
+		hubSerialNumber = null;
+		connected = false;
+		connecting = false;
+		ws = null;
+		ip = null;
+		remember = false;
+	}
+
+
+	var createConnection = function(ip, cb) {
+
+		var connection = new RTCPeerConnection();
+		var dataChannel = connection.createDataChannel("channel");
+		//ws = new WebSocket("ws://" + ip + ":" + port);
+		dataChannel.binaryType = "arraybuffer";
+
+
+		webSocketConnectTimer = setTimeout(function () {
+			if (!connected && dataChannel) {
+				dataChannel.close(); // this does not work apparently
+			}
+			
+			webSocketConnectTimer = null;
+		}, 1000);
+		
+		connection.createOffer()
+			.then(offer => connection.setLocalDescription(offer))
+			.then(() => connection.setRemoteDescription({
+				type: "answer",
+			sdpMid: 0,
+			sdpMLineIndex: 0,
+			sdp: `v=0
+o=- 2513433120397212212 2 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE 0
+a=msid-semantic: WMS
+m=application 9 UDP/DTLS/SCTP webrtc-datachannel
+c=IN IP4 0.0.0.0
+b=AS:30
+a=ice-lite
+a=ice-ufrag:hubsdk
+a=ice-pwd:aaaaaaaaaaaaaaaaaaaaaa
+a=ice-options:trickle
+a=fingerprint:sha-256 17:51:FC:8A:81:9F:E9:52:18:23:81:91:5B:02:1A:A4:17:DA:51:1A:53:16:82:75:BD:16:99:A8:D2:A5:77:46
+a=setup:passive
+a=mid:0
+a=sctp-port:5000
+a=max-message-size:8388608
+`
+			})).then(() => connection.addIceCandidate({
+				sdpMid: 0,
+				sdpMLineIndex: 0,
+				candidate: `candidate:4051717925 1 udp 2113937151 ${ip} 1111 typ host generation 0 ufrag hubsdk network-cost 999`
+			}));
+
+
+		cb(connection, dataChannel);
+
+	}
+
+	var connect = function(_ip, port, password, hashedPassword, autoconnect) {
+
+		if (connecting) {
+			return;
+		}
+
+		if (!_ip) {
+			return disconnect();
+		}
+
+		connecting = true;
+		ip = _ip;
+
+		clearTimeout(webSocketConnectTimer);
+		webSocketConnectTimer = null;
+
+		$('.login-error').hide();
+		$('.loading').css({"visibility": "visible"});
+
+		currentState = STATE_CONNECTING;
+
+		passwordRequestFn = function(salt, responseFn) { 
+			if (password) {
+				responseFn(password);
+			} else if(hashedPassword) {
+				responseFn(null, hashedPassword);
+			}
+		};
+
+		sdkApiClient = new JsSDKAuthClient(passwordRequestFn, sendFn, authComplete, onDecryptedMessage);
+
+		createConnection(ip, (connection, dataChannel) => {
+			localConnection = connection;
+			ws = dataChannel;
+
+			localConnection.onconnectionstatechange = function(e) {
+
+				
+				if (localConnection.connectionState == "failed") {
+					msg = connected ? "Connection lost" : "Could not connect";
+					disconnect(msg)
+				}
+
+			};
+
+			localConnection.oniceconnectionstatechange = function(e) {
+				
+				if (localConnection.iceConnectionState == "failed") {
+					msg = connected ? "Connection lost" : "Could not connect";
+					disconnect(msg)
+				}
+			};
+
+			ws.onmessage = function (e) {
+				sdkApiClient.onMessage(new Uint8Array(e.data));
+			};
+
+			ws.onopen = function (event) {
+				connected = true;
+				$('.loading').css({"visibility": "hidden"});
+			};
+
+			ws.onerror = function (err) {
+				console.error(err);
+				disconnect("Connection lost");
+			};
+
+			ws.onclose = function () {
+				disconnect("Connection closed");
+			};
+
+			setTimeout(function () {
+				if (!connected) {
+					msg = autoconnect ? null : "Could not connect";
+					disconnect(msg);
+				}
+			}, autoconnect ? 1500 : 5000);
+		})
+
+	};
+
+	wsReq = function (req, cb) {
+		wsCallbackStack.push(cb);
+		sdkApiClient.sendMessage(JSON.stringify(req));
+	};
+
+	var log = function(msg, packageName) {
+
+		if (!getCurrentPackage()) {
+			return;
+		}
+
+		if (!packageName) {
+			packageName = getCurrentPackage().name;
+		}
+
+		if (!consoleHistory[packageName]) {
+			consoleHistory[packageName] = [];
+		}
+
+		consoleHistory[packageName].push(msg);
+
+		if (consoleHistory[packageName].length > consoleHistorySize) {
+			consoleHistory[packageName].splice(0, 1);
+		}
+
+		updateLog();
+	}
+
+	var saveFileCache = function() {
+		if (hubSerialNumber) {
+			window.localStorage.setItem("fileCache_" + hubSerialNumber, JSON.stringify(fileCache));
+		}
+	}
+
+	var restoreFileCache = function() {
+		
+		var cacheJson = window.localStorage.getItem("fileCache_" + hubSerialNumber);
+
+		if (cacheJson) {
+
+			var tmpFileCache = null;
+			try {
+				tmpFileCache = JSON.parse(cacheJson);
+			} catch(e) {}
+
+			if (tmpFileCache && Object.keys(tmpFileCache).length > 0) {
+
+				if (confirm("You have unsaved changes. Do you want to restore them?")) {
+					fileCache = tmpFileCache;
+				} else {
+					window.localStorage.removeItem("fileCache_" + hubSerialNumber);
+				}
+			}
+
+		}
+	}
+
+	var indentedString = function(lines, padding) {
+		if (padding == undefined) {
+			padding = 5;
+		}
+		var cols = [];
+		var wordLengths = [];
+
+		for (var i = 0; i < lines[0].length; i++) {
+			cols.push(0);
+			wordLengths.push(0);
+		}
+
+		for (var i = 0; i < lines.length; i++) {
+			var words = lines[i];
+			for (var j = 0; j < words.length; j++) { 
+				var word = words[j];
+				
+				if (wordLengths[j] < word.length) {
+					wordLengths[j] = word.length;
+				}
+			}
+		}
+
+		for (var i = 0; i < wordLengths.length; i++) {
+			cols[i] = wordLengths[i] + padding;
+			if (i > 0) {
+				cols[i] += cols[i-1];
+			}
+		}
+
+		var str = "";
+
+		for (var i = 0; i < lines.length; i++) {
+			var words = lines[i];
+			var lineStr = ""
+			for (var j = 0; j < words.length; j++) { 
+				var word = words[j];
+				if (j == 0) {
+					lineStr += word;
+				} else {
+					var ind = cols[j-1];
+
+					for (var k = lineStr.length; k < ind; k++) {
+						lineStr += " ";
+					}
+
+					lineStr += word;
+				}
+
+			}
+			str += lineStr + (i < lines.length-1 ? "\n" : "");
+		}
+
+		return str;
+	};
+
+	var createToolsPackage = function(cb) {
+
+		var next = function() {
+			$.ajax({
+				"url": "/js/tools.js",
+				"dataType": "text",
+				"type": "get",
+				"success": function(data) {
+					wsReq({"op": "createDirectory", "filename": toolsPackageName}, function(res) {
+						createFileWithFullPath(toolsPackageName + "/main.js", data, function(res) {
+							if (!res.success) {
+								logCommandPrompt("Could not create tools package");
+							} else {
+								cb();
+							}
+						});
+					});
+				}
+			});
+		
+		};
+
+		var toolsDir = getFile(toolsPackageName);
+
+		if (toolsDir) {
+			deleteFile(toolsDir, false, function (res) {
+				next();
+			});
+		} else {
+			next();
+		}
+
+		
+		
+	}
+
+	var runToolCommand = function(cmd, arg) {
+
+		var next = function() {
+			var argStr = "";
+
+			if (arg) {
+				argStr =  JSON.stringify(arg)
+			}
+
+			var cmdStr = cmd + "(" + argStr + ");"
+
+			wsReq({op: "eval", package: toolsPackageName, script: cmdStr}, function (res) {
+				if (!res.success) {
+					wsReq({op: "run", package: toolsPackageName, forceRestart: true, restartAfterCrash: false}, function(res) {
+						if (res.success) {
+							wsReq({op: "eval", package: toolsPackageName, script: cmdStr});
+						} else {
+							logCommandPrompt("Could not run Tools package");
+						}
+					});
+				}
+			});
+		}
+
+		if (!hasCreatedToolsPackage) {
+			createToolsPackage(function() {
+				hasCreatedToolsPackage = true;
+				next();	
+			});
+		} else {
+			next();	
+		}
+	}
+
+	var logCommandPrompt = function(msg) {
+		$('.console.command-prompt').text($('.console.command-prompt').text() + msg + "\n");
+		$('.console.command-prompt').scrollTop($('.console.command-prompt')[0].scrollHeight);
+	}
+
+	var getCurrentFile = function() {
+
+		for (var i = 0; i < files.length; i++) {
+			var file = files[i];
+			if (file.path + file.name == currentFilePath) {
+				return file;
+			}
+		}
+
+		return null;
+	}
+
+	var getCurrentPackage = function() {
+		if (!packages) {
+			return null;
+		}
+		for (var i = 0; i < packages.length; i++) {
+			var package = packages[i];
+			if (package.name == currentPackageName) {
+				return package;
+			}
+		}
+
+		return null;	
+	}
+
+	var getPackage = function(packageId) {
+		for (var i = 0; i < packages.length; i++) {
+			var package = packages[i];
+			if (package.name == packageId) {
+				return package;
+			}
+		}
+
+		return null;	
+	}
+
+	var selectPackage = function(packageName) {
+
+		if (packageName == toolsPackageName && hideToolsPackage) {
+			return;
+		}
+
+		if (parseInt($("#package-list").val()) != packageName) {
+			$("#package-list").val(packageName);
+		}
+
+		var package = getPackage(packageName);
+
+		if (!package) {
+			return;
+		}
+
+
+		window.localStorage.setItem('package', package.name);
+
+		if (package.running) {
+			$('.runtime').removeClass('play');
+			$('.runtime').addClass('stop');
+		} else {
+			$('.runtime').removeClass('stop');
+			$('.runtime').addClass('play');
+		}
+
+		
+		$('#restart-after-crash-input').prop( "checked", !!package.restartAfterCrash );
+		
+
+		$('#file-list li').removeClass('current');
+
+		if (currentPackageName != packageName) {
+			currentPackageName = packageName;
+			
+			if (currentFilePath) {
+				var file = getCurrentFile();
+
+				if (file && file.path.substring(0, file.path.length-1) != getCurrentPackage().name) {
+					selectFile(package.name + "/" + "main.js");
+				}	
+			}
+		}
+
+		updateLog();
+		updateUI();
+	};
+
+	var packageFromName = function(name) {
+		for (var i = 0; i < packages.length; i++) {
+			if (packages[i].name == name) {
+				return packages[i];
+			}
+		}
+		return null;
+	};
+
+	var fileFromPath = function(path) {
+
+		for (var i = 0; i < files.length; i++) {
+			var file = files[i];
+			if (file.path + file.name == path) {
+				return file;
+			}
+		}
+
+		return null;
+	}
+
+
+	var getFile = function(path) {
+		if (!files) {
+			console.error("No file tree")
+			return null;
+		}
+		for (var i = 0; i < files.length; i++) {
+			var file = files[i];
+
+			if (file.path + file.name == path) {
+				return file;
+			}
+		}
+		return null;
+	};
+
+	var getCurrentFile = function() {
+		return getFile(currentFilePath);
+	}
+
+	var selectFile = function(path) {
+		
+		if (hideToolsPackage && path.substring(0, toolsPackageName.length+1) == toolsPackageName+"/") {
+			return;
+		}
+
+		var file = getFile(path);
+		
+		if (!file) {
+			return;
+		}
+
+		if (file.type == 'dir') {
+			selectPackage(file.name);
+		} else {
+
+			currentFilePath = path;
+			window.localStorage.setItem("file", file.path + file.name)
+
+			if (fileCache[file.path + file.name]) {
+				$('.CodeMirror').show();
+				myCodeMirror.getDoc().setValue(fileCache[file.path + file.name]);
+				myCodeMirror.refresh();
+				
+			} else {
+				var req = {"op": "getFile", "filename": file.path + file.name};
+			
+				wsReq(req, function (data) {
+
+					if (!data.success) {
+						log("Could not read file: " + file.path + file.name);
+					} else {
+						$('.CodeMirror').show();
+						delete fileCache[file.path + file.name];
+						saveFileCache();
+						myCodeMirror.getDoc().setValue(data.contents);
+						myCodeMirror.refresh();
+					}
+
+				});
+			}
+
+			var packageName = file.path.substring(0, file.path.length-1);
+
+			if (!getCurrentPackage() || getCurrentPackage().name != packageName) {
+				selectPackage(packageName);
+			}
+
+			updateUI();
+
+
+		}
+			
+	};
+
+	var saveFile = function() {
+		
+		if (currentFilePath == null) {
+			return;
+		}
+
+		var data = myCodeMirror.getDoc().getValue();
+		var file = getCurrentFile();
+
+		if (file) {
+			wsReq({"op": "save", "filename": file.path + file.name, "contents": data}, function (data) {
+				if (!data.success) {
+					alert("Could not save file");
+				} else {
+					delete fileCache[currentFilePath];
+					saveFileCache();
+					updateUI();
+				}
+			});	
+		}
+	};
+
+	
+
+	var runCurrentPackage = function() {
+		var package = getCurrentPackage();
+
+		var file = fileFromPath(package.name + "/" + "main.js");
+
+		if (!file) {
+			alert("Missing main.js");
+			return;
+		}
+
+		var restartAfterCrash = $('#restart-after-crash-input').is(":checked");
+		package.restartAfterCrash = restartAfterCrash;
+		saveFile();
+		clearLog(false);
+		wsReq({"op": "run", "package": package.name, "forceRestart": true, "restartAfterCrash": restartAfterCrash}, function (res) {
+
+			if (res.success) {
+				getCurrentPackage().running = true;
+			} else {
+				log("Could not run package: " + getCurrentPackage().name);
+			}
+
+			updateUI();
+		});
+	};
+
+	var killCurrentPackage = function() {
+		var package = getCurrentPackage();
+		killPackage(package.name, function (res) {
+
+			getCurrentPackage().running = false;
+
+			if (res.success) {
+				log("[Process stopped]");
+			}
+			updateUI();
+		});
+	};
+
+	var killPackage = function(packageName, cb) {
+		var package = getPackage(packageName);
+		package.running = false;
+		wsReq({"op": "kill", "package": package.name}, cb);
+	}
+
+	var createPackage = function() {
+
+		var packageName = prompt("Module name", "");
+
+		if (!packageName) {
+			return;
+		}
+
+		var found = false;
+
+		for (var i = 0; i < packages.length; i++) {
+			if (packages[i].name == packageName) {
+				found = true;
+				break;
+			}
+		}
+
+		if (found) {
+			alert("Package already exists");
+		} else {
+			wsReq({"op": "createDirectory", "filename": packageName});
+			
+			var moduleContents = '{\n' +
+			'	"name": "' + packageName + '",\n' +
+			'	"version": "1.0.0"\n' +
+			'}';
+
+			createFileWithFullPath(packageName + "/module.json", moduleContents);
+
+			createFileWithFullPath(packageName + "/main.js", '// main.js\n');
+		}
+
+
+	};
+
+	var createFile = function(path) {
+		var fileName = prompt("File name", "");
+		if (!fileName) {
+			return;
+		}
+
+		var fullPath = path+fileName;
+
+		if (getFile(fullPath)) {
+			alert("File already exists");
+		} else {
+			createFileWithFullPath(path+fileName);
+		}
+
+		
+	};
+
+	var createFileWithFullPath = function(path, contents, cb) {
+
+		wsReq({"op": "save", "filename": path, "contents": contents ? contents : ""}, function (res) {
+			selectFilePathAfterUpdate = path;
+
+			if (cb) {
+				cb(res);
+			}
+			
+		});
+	}
+
+
+	var deleteFile = function(file, ask, cb) {
+
+		if (ask === undefined) {
+			ask = true;
+		}
+
+		if (file.type == "dir") {
+			if (!ask || confirm("Delete package " + file.name + "? All files in this package will be deleted!")) {
+
+				killPackage(file.name);
+
+				for (var i = 0; i < files.length; i++) {
+					var tFile = files[i];
+					
+					
+					var tPath = tFile.path;
+					tPath = tPath.substring(0, tPath.length-1);
+					
+					if (tPath == file.name) {
+						
+						wsReq({"op": "delete", "filename": tFile.path + tFile.name});
+					}
+				}
+
+				wsReq({"op": "delete", "filename": file.path + file.name}, function(res) {
+					if (cb) {
+						cb(res);
+					}
+				});
+
+			}			
+		} else if (confirm("Delete " + file.name + "?")) {
+			wsReq({"op": "delete", "filename": file.path + file.name}, function(res) {
+				if (cb) {
+					cb(res);
+				}
+			});
+		}
+	};
+
+	var renameFile = function(file) {
+		var newName = prompt("New name", file.name);
+		if (newName) {
+			if (file.type == 'dir' && file.name == currentPackageName) {
+				
+				var currentFilePathComponents = currentFilePath.split("/");
+
+				if (currentFilePathComponents[0] == currentPackageName) {
+
+					currentFilePath = null;
+					selectFilePathAfterUpdate = newName + "/" + currentFilePathComponents[1];
+				}
+
+				currentPackageName = newName;
+			}
+			wsReq({"op": "rename", "filename": file.path + file.name, "newFilename": file.path + newName});
+		}
+	};
+
+
+	var downloadPackage = function(package) {
+		
+		var zip = new JSZip();
+		var version = null;
+		var filesInPackage = files.filter(f => f.path == package);
+		var selectedFiles = [];
+		var err = null;
+
+		var next = function() {
+			if (!err) {
+				var fileName = package.replace('/', '') + (version ? '-' + version : '') + '.zip';
+				var $a = $('<a></a>');
+
+				$a.attr('href', "data:application/zip;base64," + zip.generate());
+				$a.attr('download', fileName);
+				$('body').append($a);
+
+				$a[0].click();
+
+				$a.remove();
+			}
+		};
+
+		var selectedFiles = files.filter(f => f.path == package);
+		var numFiles = selectedFiles.length;
+
+		selectedFiles.forEach(file => {
+			
+			var req = {"op": "getFile", "filename": file.path + file.name};
+			wsReq(req, function (data) {
+
+				if (!data.success) {
+					err = "Could not read file: " + file.path + file.name;
+					log(err);
+				} else {
+
+					if (file.name == 'module.json') {
+						try {
+							var moduleInfo = JSON.parse(data.contents);
+							version = moduleInfo.version;
+						} catch(e) {}
+						
+					}
+					zip.add(file.name, data.contents);
+				}
+
+				numFiles--;
+
+				if (numFiles == 0) {
+					next();
+				}
+
+			});
+			
+		})
+	}
+
+	var updateUI = function () {
+		$('#file-list').empty();
+		$('#package-list').empty();
+		$('#package-list').append($('<option disabled="disabled">Select module</option>'));
+
+		for (var i = 0; i < packages.length; i++) {
+			if (!hideToolsPackage || packages[i].name != toolsPackageName) {
+				$option = $('<option value="' + packages[i].name + '">' + packages[i].name + '</option>');
+				if (packages[i].name == currentPackageName) {
+					$option.attr("selected", "selected");
+				}
+				$('#package-list').append($option);	
+			}
+		}
+
+		for (var i = 0; i < files.length; i++) {
+			(function (index) {
+				var file = files[index];
+
+
+				if (!hideToolsPackage || !((file.type == "dir" && file.name == toolsPackageName) || (file.type == "file" && file.path == toolsPackageName + "/"))) {
+						
+					
+
+					var $li = $('<li>' + file.name + '</li>');
+
+
+					$li.attr("data-path", file.type == "dir" ? file.name : file.path + file.name);
+
+					$li.attr("data-package", file.type == "dir" ? file.name : file.path.substring(0, file.path.length-1));
+
+					if (file.type == "file") {
+						$li.attr("data-file", file.name);
+					}
+					
+					if (file.name.indexOf(".json") != -1) {
+						$li.addClass("json");
+					} else if (file.name.indexOf(".js") != -1) {
+						$li.addClass("js");
+					}
+
+					$li.addClass(file.type);
+					$li.addClass("level-" + file.level);
+
+					if (file.type == "dir" && packageFromName(file.name).running) {
+						$li.addClass("running");
+					}
+
+					if (file.path + file.name == currentFilePath) {
+						$li.addClass("selected");
+					}
+
+					if ((file.type == "dir" && file.name == currentPackageName) || (file.type == "file" && file.path == currentPackageName + "/")) {
+						$li.addClass("current");
+					}
+
+					if (fileCache[file.path + file.name]) {
+						$li.addClass("changed");
+					}
+
+					$li.click(function (e) {
+						selectFile(file.path + file.name);
+					})
+					$('#file-list').append($li);
+
+				}
+			})(i);
+		}
+
+		if (getCurrentPackage() && getCurrentPackage().running) {
+			$('.runtime').removeClass('play');
+			$('.runtime').addClass('stop');
+		} else {
+			$('.runtime').removeClass('stop');
+			$('.runtime').addClass('play');
+		}
+		
+		$(window).resize();
+
+	}
+
+	var clearLog = function(all) {
+
+		if (all === true) {
+			consoleHistory = {};
+		} else {
+			if (consoleMode == CONSOLE_MODE_CONSOLE) {
+				var package = getCurrentPackage();
+				if (package) {
+					var packageName = package.name;
+					var text = consoleHistory[packageName] = [];
+				}
+			}
+		}
+
+		updateLog();
+	}
+
+	var clearPromptLog = function() {
+		$('.console.command-prompt').text("");
+	}
+
+	var updateLog = function() {
+		var package = getCurrentPackage();
+
+		if (package) {
+			var packageName = package.name;
+			var text = consoleHistory[packageName] ? consoleHistory[packageName].join("\n") : "";
+
+			$('.console.log').text(text);
+			$('.console.log').scrollTop($('.console.log')[0].scrollHeight);
+		}
+		
+	}
+
+	var reloadData = function (data) {
+		tree = data.tree;
+
+		var oldPackages = packages;
+		
+		files = [];
+		packages = [];
+		
+		var r = function (items, ind, r, path) {
+			for (var i = 0; i < items.length; i++) {
+
+				var item = items[i];
+
+				var hidden = false;
+
+				if (!DEBUG) {
+					for (var key in item.files) {
+						var file = item.files[key];
+						if (file.name == "__hidden") {
+							hidden = true;
+						}
+					}
+				}
+
+				if (!hidden) {
+
+					
+					
+					var myItem = {"name": item.name, "path": path, "type": item.type, "level": ind};
+
+					files.push(myItem);
+
+					if (item.type == 'dir') {
+
+
+
+						var found = false;
+						for (var k in packages) {
+							if (packages[k].name == item.name) {
+								found = true;
+							}
+						}
+
+						if (!found) {
+							var package = {"name": item.name};
+							
+							if (oldPackages) {
+								oldPackages.forEach(function(oldPackage) {
+
+									if (oldPackage.name === package.name) {
+										package.running = oldPackage.running;
+										package.restartAfterCrash = oldPackage.restartAfterCrash;
+									}
+								});	
+							}
+
+							packages.push(package);
+						}
+						r(item.files, ind+1, r, item.name + "/");
+					}
+				}
+			}
+		}
+
+		r(tree.files, 0, r, '');
+
+		files.sort(function (a, b) {
+			var aa = a.path + a.name;
+			var bb = b.path + b.name;
+			return aa == bb ? 0 : aa < bb ? -1 : 1;
+		});
+
+		packages.sort(function(a, b) {
+			return a.name == b.name ? 0 : a.name < b.name ? -1 : 1;
+		});
+
+		if (data.runningPackages) {
+			for (var i = 0; i < data.runningPackages.length; i++) {
+				var package = packageFromName(data.runningPackages[i].name);
+				if (package) {
+					package.running = true;
+					package.restartAfterCrash = data.runningPackages[i].restartAfterCrash;
+				}
+			}
+		}
+
+		if (!getCurrentPackage() && packages.length > 0) {
+			for (var i = 0; i < packages.length; i++) {
+				if (packages[i].name != toolsPackageName) {
+					selectPackage(packages[i].name);
+					break;
+				}
+			}
+		}
+
+		updateUI();
+
+		if (selectFilePathAfterUpdate) {
+			selectFile(selectFilePathAfterUpdate);
+			selectFilePathAfterUpdate = null;
+		}
+	};
+
+	var exportButtonPairings = function(pairings) {
+		var $popup = $(
+			'<div class="popup_outer">' +
+				'<div class="popup">' + 
+					'<h2>Button Pairings</h2>' + 
+					'<textarea></textarea>' +
+					'<button class="copy">Copy</button>' + 
+					'<button class="exportdm">Send to Device Manager</button>' + 
+					'<button class="close">Close</button>' +
+				'</div>' +
+			'</div>'
+		);
+
+
+		var $textarea = $popup.find('textarea');
+
+		$textarea.text(pairings);
+		$popup.find('.close').click(function (e) {
+			e.preventDefault();
+			$popup.remove();
+		});
+
+
+		
+
+		$popup.find('.exportdm').click(function(e) {
+			e.preventDefault();
+
+			var text = $textarea.val();
+
+			var url = "https://dm2.flic.io/buttons/import?buttons=" + text;
+
+			open(url);
+
+		});
+
+		$popup.find('.copy').click(function (e) {
+			$textarea[0].focus();
+			$textarea[0].setSelectionRange(0, $textarea[0].value.length);
+			var succeeded;
+			try {
+				succeeded = document.execCommand("copy");
+			} catch(e) {
+				succeeded = false;
+			}
+
+			if (!succeeded) {
+				alert('Could not copy to clipboard');
+			}
+
+			e.preventDefault();
+
+		});
+
+		$('body').append($popup);
+	}
+
+	var showTextPopup = function(text) {
+		var $popup = $(
+			'<div class="popup_outer">' +
+				'<div class="popup">' +
+					'<textarea></textarea>' +
+					'<button class="close">Close</button>' +
+				'</div>' +
+			'</div>'
+		);
+
+		var $textarea = $popup.find('textarea');
+
+		$textarea.text(text);
+		$popup.find('.close').click(function (e) {
+			e.preventDefault();
+			$popup.remove();
+		});
+
+		$('body').append($popup);
+	}
+
+	var importButtonPairings = function() {
+		var $popup = $(
+			'<div class="popup_outer">' +
+				'<div class="popup">' + 
+					'<h2>Import Button Pairings</h2>' + 
+					'<textarea></textarea>' +
+					'<button class="import">Import</button>' + 
+					'<button class="close">Close</button>' +
+				'</div>' +
+			'</div>'
+		);
+
+
+		var $textarea = $popup.find('textarea');
+
+		$popup.find('.close').click(function (e) {
+			e.preventDefault();
+			$popup.remove();
+		});
+
+		$popup.find('.import').click(function (e) {
+			e.preventDefault();
+			var pairings;
+
+			try {
+				pairings = JSON.parse($textarea.val());	
+			} catch (e) {
+				pairings = null;
+			}
+
+			if (!pairings) {
+				alert('Could not parse pairings JSON');
+			} else {
+				runToolCommand("importPairings", pairings);
+			}
+
+			$popup.remove();
+
+			
+
+		});
+
+		$('body').append($popup);
+
+		$textarea.focus();
+	}
+
+	document.onkeydown = function (e) {
+		e = e || window.event;
+		if (e.ctrlKey || e.metaKey) {
+			var c = e.which || e.keyCode;
+			
+			switch (c) {
+				case 83: // Ctrl+S
+					saveFile();
+					e.preventDefault();     
+					e.stopPropagation();
+					return false;
+
+				case 66: // Ctrl+B
+					runCurrentPackage();
+					e.preventDefault();     
+					e.stopPropagation();
+					return false;
+
+				case 190: // Ctrl+.
+
+					killCurrentPackage();
+					e.preventDefault();     
+					e.stopPropagation();
+					return false;
+					
+				break;
+			}
+		}
+	};
+})();

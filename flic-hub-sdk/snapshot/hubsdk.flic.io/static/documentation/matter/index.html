@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		
+		<link rel="shortcut icon" href="../../favicon.ico">
+
+		<link rel="stylesheet"
+      href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css">
+
+      	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+      	<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+      	<link rel="stylesheet" href="../../css/page.css">
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+		<script>hljs.initHighlightingOnLoad();</script>
+		<title>Flic Hub Studio Documentation – Matter</title>
+		
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-S50174KZHE"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+
+		  gtag('config', 'G-S50174KZHE');
+		</script>
+		
+	</head>
+	<body>
+
+		<div class="page">
+			<a href="../../../index.html">Back to Flic Hub Studio</a>
+
+			<h1>Flic Hub Studio<br>Matter Guide</h1>
+
+			<h2>Introduction</h2>
+
+			<p>The Flic Hub LR is equipped with a powerful, fully integrated Matter controller, opening up a world of possibilities for smart home automation. With Flic Script and Flic Studio, you can easily create fully customizable Matter-based solutions tailored to your unique needs. Whether you’re looking to streamline your routines, enhance your home’s connectivity, or develop advanced smart environments, the Flic Hub LR gives you unparalleled flexibility and control—all with an intuitive and seamless user experience. Unlock the true potential of Matter with Flic, and bring your smart home vision to life.</p>
+
+			<h3>Send Commands</h3>
+
+			Sending commands to a Matter device is done with the <code>sendCommand</code> function. Here are a few examples on how to send commands to a Matter light:
+
+			<pre><code>const matter = require("matter");
+
+// Toggle  light
+matter.sendCommand(nodeId, 1, "On/Off", "Toggle", {}, (error, response) => console.log(JSON.stringify(error) + ", " + JSON.stringify(response))); 
+
+// Setting brightness:
+matter.sendCommand(nodeId, 1, "Level Control", "MoveToLevel", {"Level": 110, "TransitionTime": 0, "OptionsMask": 1, "OptionsOverride": 1}, (error, response) => console.log(JSON.stringify(error) + ", " + JSON.stringify(response)));
+
+// Setting color using hue/saturation:
+matter.sendCommand("5716184942583194821", 1, "Color Control", "MoveToHueAndSaturation", {"Hue": 254, "Saturation": 254, "TransitionTime": 0, "OptionsMask": 1, "OptionsOverride": 1}, (error, response) => console.log(JSON.stringify(error) + ", " + JSON.stringify(response)));
+
+// Setting color temperature:
+matter.sendCommand("5716184942583194821", 1, "Color Control", "MoveToColorTemperature", {"ColorTemperatureMireds": 370, "TransitionTime": 0, "OptionsMask": 1, "OptionsOverride": 1}, (error, response) => console.log(JSON.stringify(error) + ", " + JSON.stringify(response)));</code></pre>
+
+
+			<h3>Subscribtions</h3>
+			<p>To react to changes that happens on a Matter device you can use our subscription model to register a listener that is called when an attribute is updated:</p>
+
+			<pre><code>let subscription = matter.subscribe("5716184942583194821", [{endpointId: 1}]);
+
+subscription.on("update", function(d) {
+	console.log("connected: " + d.connected);
+	if (d.updates === undefined) return;
+	console.log(JSON.stringify(d.updates));
+});</code></pre>
+
+			<p>For the full documentation of our Matter API, go here:</p>
+
+			<p><a href="../index.html#matter">Flic Script Matter API Documentation</a></p>
+
+			
+		</div>
+
+	</body>
+</html>

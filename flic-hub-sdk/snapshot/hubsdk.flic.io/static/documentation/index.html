@@ -1,0 +1,1853 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		
+		<link rel="shortcut icon" href="../favicon.ico">
+
+		<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css">
+
+      	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet">
+      	<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+
+      	<link rel="stylesheet"
+      href="../css/page.css">
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+		<script>hljs.initHighlightingOnLoad();</script>
+		<title>Flic Hub Studio Documentation</title>
+		<style type="text/css">
+
+			body
+			{
+				padding: 2em;
+			}
+
+			.page
+			{
+
+			}
+
+			h2
+			{
+				margin-bottom: 1.5em;
+			}
+		</style>
+
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+
+		<script type="text/javascript">
+			
+			$(function() {
+
+				var $navigation = $('.navigation');
+
+				$("h2, h3, h4, h5").each(function(i) {
+
+					console.log(i)
+
+					console.log($(this).prop("tagName"));
+
+
+
+
+					var level = parseInt($(this).prop("tagName").substring(1, 2))-1;
+
+					
+					var text = $(this).text();
+
+					text = text.replace(/\(.*\)/, "");
+
+
+
+					var anchorName = text.toLowerCase().replace(/[^a-z]/g, "_");
+					anchorName.replace(/__/g, "_");
+					anchorName = i + "_" + anchorName;
+
+					console.log(anchorName);
+
+					$(this).append($('<a style="display: ;" name="' + anchorName + '" id="' + anchorName + '"></a>'));
+
+
+
+
+					$navigation.append($('<li class="level-' + level + '"><a href="index.html#' + anchorName + '">' + text + '</a></li>'));
+
+
+					
+					
+
+				});
+
+				var hash = window.location.hash;
+if (hash) {
+    var tryScroll = function() {
+        var $target = $(hash);
+        if ($target.length) {
+            // Found it! Jump to it using native scroll
+            $target[0].scrollIntoView({behavior: "auto"});
+            // If you want the hash to show in the URL, uncomment below:
+            // window.location.hash = hash;
+            return true;
+        }
+        return false;
+    };
+
+    // Try immediately (in case it's already there)
+    if (!tryScroll()) {
+        // If not found, set up an interval to check every 100ms
+        var interval = setInterval(function() {
+            if (tryScroll()) {
+                clearInterval(interval);
+            }
+        }, 100);
+        // Optionally, stop checking after 10 seconds:
+        setTimeout(function() { clearInterval(interval); }, 10000);
+    }
+}
+
+			});
+
+		</script>
+
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-S50174KZHE"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+
+		  gtag('config', 'G-S50174KZHE');
+		</script>
+		
+	</head>
+	<body>
+
+		<ul class="navigation">
+			
+		</ul>
+
+		
+			 
+		
+
+		<div class="page documentation">
+
+			<h1>Flic Hub Studio<br>JS API Documentation</h1>
+
+			<h2>Introduction</h2>
+			
+			<p>The Flic Hub Studio JS API is mainly based on the structure of Node.js.</p>
+
+			<p>To get a reference to a module's exports, call <code>require('moduleName')</code>. To get a reference to the exports of a local module, i.e. a file in your file tree, e.g. <code>myModule.js</code>, call <code>require('./myModule')</code>. This will return whatever that file has assigned to its <code>module.exports</code> property.</p>
+
+			<p>The runtime supports most of the features in the ES2023 specification and is currently based on <a href="https://github.com/bellard/quickjs" target="_blank">QuickJS</a>.</p>
+
+			<h2>Object types</h2>
+
+			<h3>Button <code>Object Type</code></h3>
+
+			<table class="definition">
+				<tr>
+					<td>bdaddr <code>String</code>:</td>
+					<td>Device address of button</td>
+				</tr>
+
+
+				<tr><td>serialNumber <code>String</code>: </td><td> Serial number</td></tr>
+				<tr><td>color <code>String</code>: </td><td> Colour of the button (lowercase)</td></tr>
+				<tr><td>name <code>String</code>: </td><td> The user assigned button name</td></tr>
+				<tr><td>activeDisconnect <code>Boolean</code>: </td><td> The user has explicitly disconnected the button</td></tr>
+				<tr><td>connected <code>Boolean</code>: </td><td> The connection to the button is currently established</td></tr>
+				<tr><td>ready <code>Boolean</code>: </td><td> The connection is verified (see buttonReady)</td></tr>
+				<tr><td>batteryStatus <code>Integer or Null</code>: </td><td> Battery level in percent (0-100), or null if unknown</td></code>
+				<tr><td>firmwareVersion <code>Integer or Null</code>: </td><td> Firmware version of button, or null if unknown</td></code>
+				<tr><td>flicVersion <code>Integer</code>: </td><td> Flic version (1 or 2)</td></tr>
+				<tr><td>uuid <code>String</code>: </td><td> A 32 characters long hex string, unique for every button</td></tr>
+				<tr><td>key <code>Integer</code>: </td><td> A 40 characters long hex string (only for Flic 2)</td></code>
+
+
+			</table>
+
+			<p>Note: when a Button object is returned or passed in an event, it is a copy of the actual internal button state, so trying to change any of these properties won't have any effect.</p>
+
+			<hr>
+
+			<h2>Buttons <code>Module</code></h2>
+
+			<p>The <code>buttons</code> module is responsible for adding and removing buttons and sending button events.</p>
+			<p>The module object is an instance of the class Buttons.</p>
+
+			<h3>Orientation <code>Object Type</code></h3>
+
+			<table class="definition">
+				<tr><td>x <code>Number</code>: </td><td> x</td></tr>
+				<tr><td>y <code>Number</code>: </td><td> y</td></tr>
+				<tr><td>z <code>Number</code>: </td><td> z</td></tr>
+			</table>
+
+			<p>Contains the orientation according to the internal accelerometer. The unit is "g" and the values contain floating point numbers.</p>
+
+			<h3>Buttons <code>Class</code></h3>
+			<p>Extends <code>EventEmitter</code></p>
+
+			<h4>Events</h4>
+
+			<h5>buttonAdded</h5>
+
+			<p>Emitted when a button has successfully been added to the hub by any source.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>button <code>Button Object Type</code>: Info about the button</li></ul></li>
+			</ul>
+
+
+			<h5>buttonUpdated</h5>
+
+			<p>Emitted when a button has successfully been updated by any source.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>button <code>Button Object Type</code>: Info about the button</li></ul></li>
+			</ul>
+
+
+
+			<h5>buttonDeleted</h5>
+			<p>Emitted when a button has been removed.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>bdaddr <code>String</code>: Device address of button</li></ul></li>
+			</ul>
+			
+
+			<h5>buttonConnected</h5>
+			<p>Emitted as soon as the button has made a physical connection to the hub (not yet fully verified).</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>bdaddr <code>String</code>: Device address of button</li></ul></li>
+			</ul>
+			
+
+
+			<h5>buttonReady</h5>
+			<p>Emitted when the connection has been verified. From now on button press events may be delivered.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>bdaddr <code>String</code>: Device address of button</li></ul></li>
+			</ul>
+
+			<h5>buttonDisconnected</h5>
+			<p>Emitted when the physical connection to the button has ended for any reason. This will happen either if the signal strength to the button is not good enough, if it lost synchronization with the button or if the button went into sleep mode.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>bdaddr <code>String</code>: Device address of button</li></ul></li>
+			</ul>
+
+			<h5>buttonDown</h5>
+			<p>Emitted when the button was pressed. If the button was disconnected while pressed and couldn’t connect within 15 seconds, the event is not emitted but lost. Use this to get the minimum latency.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>bdaddr <code>String</code>: Device address of button</li></ul></li>
+				<li class="subitem"><ul><li>buttonNumber <code>Integer</code>: 0 for big button, 1 for small button (Flic Duo)</li></ul></li>
+				<li class="subitem"><ul><li>orientation <code>Orientation Object Type</code>: Orientation of the device</li></ul></li>
+			</ul>
+
+			<h5>buttonUp</h5>
+			<p>Emitted when the button was released. If the button was disconnected while pressed and couldn’t connect within 15 seconds, the event is not emitted but lost.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>bdaddr <code>String</code>: Device address of button</li></ul></li>
+				<li class="subitem"><ul><li>buttonNumber <code>Integer</code>: 0 for big button, 1 for small button (Flic Duo)</li></ul></li>
+				<li class="subitem"><ul><li>orientation <code>Orientation Object Type</code>: Orientation of the device (only for Flic Duo)</li></ul></li>
+				<li class="subitem"><ul><li>gesture <code>String</code> or <code>null</code>: One of <code>"left"</code>, <code>"right"</code>, <code>"up"</code>, <code>"down"</code>, <code>"unrecognized"</code> (the user appears to be performing a gesture, but unrecognized) or <code>null</code> (only for Flic Duo).</li></ul></li>
+			</ul>
+
+			<h5>buttonClickOrHold</h5>
+			<p>For the use case to differentiate between click and hold, use this event type. Two clicks after each other will emit two events of this kind, compared to the events designed to handle double click. Only one of the boolean variables will be true.</p>
+			<p>If the button was disconnected while pressed and couldn’t connect within 15 seconds, the event is not emitted but lost.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>bdaddr <code>String</code>: Device address of button</li></ul></li>
+				<li class="subitem"><ul><li>isClick <code>Boolean</code>: The button was clicked and released within 1 second</li></ul></li>
+				<li class="subitem"><ul><li>isHold <code>Boolean</code>: The button has been held down for 1 second</li></ul></li>
+				<li class="subitem"><ul><li>buttonNumber <code>Integer</code>: 0 for big button, 1 for small button (Flic Duo)</li></ul></li>
+				<li class="subitem"><ul><li>orientation <code>Orientation Object Type</code>: Orientation of the device (only for Flic Duo)</li></ul></li>
+				<li class="subitem"><ul><li>gesture <code>String</code> or <code>null</code>: One of <code>"left"</code>, <code>"right"</code>, <code>"up"</code>, <code>"down"</code>, <code>"unrecognized"</code> (the user appears to be performing a gesture, but unrecognized) or <code>null</code> (only for Flic Duo).</li></ul></li>
+			</ul>
+			
+			<h5>buttonSingleOrDoubleClick</h5>
+			<p>For the use case to differentiate between single and double click, use this event type. If the button is held down for a long time before released, this simply counts as a single click. Only one of the boolean variables will be true.</p>
+			<p>If the button was disconnected while pressed and couldn’t connect within 15 seconds, the event is not emitted but lost.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>bdaddr <code>String</code>: Device address of button</li></ul></li>
+				<li class="subitem"><ul><li>isSingleClick <code>Boolean</code>: The button was pressed once and not pressed again after the next 0.5 seconds</li></ul></li>
+				<li class="subitem"><ul><li>isDoubleClick <code>Boolean</code>: The button was clicked twice with max 0.5 seconds pause</li></ul></li>
+				<li class="subitem"><ul><li>buttonNumber <code>Integer</code>: 0 for big button, 1 for small button (Flic Duo)</li></ul></li>
+				<li class="subitem"><ul><li>orientation <code>Orientation Object Type</code>: Orientation of the device (only for Flic Duo)</li></ul></li>
+				<li class="subitem"><ul><li>gesture <code>String</code> or <code>null</code>: One of <code>"left"</code>, <code>"right"</code>, <code>"up"</code>, <code>"down"</code>, <code>"unrecognized"</code> (the user appears to be performing a gesture, but unrecognized) or <code>null</code> (only for Flic Duo).</li></ul></li>
+			</ul>
+
+
+			<h5>buttonSingleOrDoubleClickOrHold</h5>
+			<p>For the use case to differentiate between all three event types. Only one of the boolean variables will be true.</p>
+			<p>If the button was disconnected while pressed and couldn’t connect within 15 seconds, the event is not emitted but lost.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>obj <code>Object</code>:</li>
+				<li class="subitem"><ul><li>bdaddr <code>String</code>: Device address of button</li></ul></li>
+				<li class="subitem"><ul><li>isSingleClick <code>Boolean</code>: The button was pressed once and not pressed again after the next 0.5 seconds</li></ul></li>
+				<li class="subitem"><ul><li>isDoubleClick <code>Boolean</code>: The button was clicked twice with max 0.5 seconds pause</li></ul></li>
+				<li class="subitem"><ul><li>isHold <code>Boolean</code>: The button was held down for 1 second.</li></ul></li>
+				<li class="subitem"><ul><li>buttonNumber <code>Integer</code>: 0 for big button, 1 for small button (Flic Duo)</li></ul></li>
+				<li class="subitem"><ul><li>orientation <code>Orientation Object Type</code>: Orientation of the device (only for Flic Duo)</li></ul></li>
+				<li class="subitem"><ul><li>gesture <code>String</code> or <code>null</code>: One of <code>"left"</code>, <code>"right"</code>, <code>"up"</code>, <code>"down"</code>, <code>"unrecognized"</code> (the user appears to be performing a gesture, but unrecognized) or <code>null</code> (only for Flic Duo).</li></ul></li>
+			</ul>
+
+			<h4>Methods</h4>
+
+			<h5>getButtons()</h5>
+			<p>Method that collects info about all buttons.</p>
+			Returns <code>Button[]</code>: List of buttons
+
+			<h5>getButton(bdaddr)</h5>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>bdaddr <code>String</code>: Device address of button</li>
+			</ul>
+			Returns <code>Button</code>: The Button or null if not found
+
+
+
+
+
+			<h5>startScanWizard()</h5>
+			<p>Method that starts a scan wizard and returns an object that is used for monitoring the progress and can be used for canceling.</p>
+			<p>Returns <code>ScanWizard</code></p>
+
+			<h5>importFlic2Pairings(pairings)</h5>
+			<p>Parameters:</p>
+
+
+			<ul class="parameters">
+				<li>pairings <code>Object[]</code>: List of button pairings</li>
+				<li class="subitem"><ul><li>bdaddr <code>String</code>: Device address of button</li></ul></li>
+				<li class="subitem"><ul><li>serialNumber <code>String</code>: Serial number</li></ul></li>
+				<li class="subitem"><ul><li>color <code>String</code>: Colour of the button (lowercase)</li></ul></li>
+				<li class="subitem"><ul><li>firmwareVersion <code>Integer</code>: Last known firmware version of button</li></ul></li>
+				<li class="subitem"><ul><li>uuid <code>String</code>: A 32 characters long hex string, unique for every button</li></ul></li>
+				<li class="subitem"><ul><li>key <code>String</code>: A 40 characters long hex string</li></ul></li>
+				<li>callback <code>Function</code>: A callback function that is called when the import is complete (no parameters)</li>
+			</ul>
+
+
+			<h3>ScanWizard <code>Class</code></h3>
+			<p>Extends EventEmitter</p>
+			<p>Class that represents an ongoing scan wizard. Use the startScanWizard() method to create and start one.</p>
+
+			<h4>Events</h4>
+
+
+
+			<h5>foundPrivateButton</h5>
+			<p>Emitted when a private button is found. The user should be told to press and hold down the Flic button for at least 8 seconds. If the user does that, the button becomes a public button and the hub will then automatically connect to it.</p>
+			
+			<h5>foundPublicButton</h5>
+			<p>Emitted when a public button is found. That is either a button new from factory (or factory reset) or a button that has been pressed and held down for at least 8 seconds during at most 30 seconds ago.</p>
+
+
+			<ul class="parameters">
+				<li>bdaddr <code>String</code>: Device address of button</li>
+			</ul>
+
+
+			<h5>buttonConnect</h5>
+			<p>Emitted when as soon as a connection to the previously found public button has been physically established (it must however first be verified before use).</p>
+			
+			<ul class="parameters">
+				<li>bdaddr <code>String</code>: Device address of button</li>
+			</ul>
+
+			<h5>complete</h5>
+			<p>Emitted when the button has been successfully verified and is now ready to use. At this point the button is now also paired with the hub and the hub will listen to its events until it is explicitly disconnected (can currently only be done from within the Flic app) or removed. Use the Buttons class to get more info about the button. The buttonAdded event will be emitted right after this event is emitted.</p>
+			
+			<ul class="parameters">
+				<li>bdaddr <code>String</code>: Device address of button</li>
+			</ul>
+
+			<h5>fail</h5>
+			<p>Emitted when the scan wizard has failed.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>error <code>String</code>: Reason. One of the following (be prepared for other to be added):</li>
+				<li class="subitem">
+					<ul>
+						<li><code>CancelledByUser</code>: The user cancelled the scan request</li>
+						<li><code>FailedTimeout</code>: The scan wizard did not make any progress for 30 seconds</li>
+						<li><code>ButtonIsPrivate</code>: A private button was found but the user didn’t make it public</li>
+						<li><code>BluetoothUnavailable</code>: Shouldn’t happen unless an internal error occurs</li>
+						<li><code>InternetBackendError</code>: The backend couldn’t be reached or not verify the button</li>
+						<li><code>InvalidData</code>: Usually the Flic hardware is broken. Or try reinsert the battery.</li>
+					</ul>
+				</li>
+			</ul>
+				
+			<h4>Methods</h4>
+
+			<h5>cancel()</h5>
+			<p>Cancels the ongoing scan wizard. The fail event will be emitted with CancelledByUser as reason (unless it completes or fails before it gets cancelled).</p>
+
+
+			<hr>
+
+			<h2>IR <code>Module</code></h2>
+			<p>Module name: <code>ir</code>.</p>
+			<p>The IR module is used to record and play signals using the IR accessory. The module object is an instance of the class IR.</p>
+
+			<h3>IR <code>Class</code></h3>
+			<p>Extends: EventEmitter</p>
+
+			<h4>Events</h4>
+
+			<h5>recordComplete</h5>
+			<p>Emitted when a record has completed.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>arr <code>Uint32Array</code>: An Uint32Array containing the signal (see play for format).</li>
+			</ul>
+			
+			<h4>Methods</h4>
+
+			<h5>record()</h5>
+			<p>Starts recording IR signals. The IR receiver will be turned on and start listen for a signal. As soon as a signal is detected, it starts recording and will continue to record until there is a silence of 125 ms. There is otherwise no timeout currently for detecting the signal. The recorded signal will be delivered using the recordComplete event.</p>
+			
+			<h5>cancelRecord()</h5>
+			<p>Cancels an ongoing recording. The recordComplete event will thus not be emitted.</p>
+
+			<h5>play(arr, callback)</h5>
+			<p>Plays a recorded signal.</p>
+			<p>The first element of the array should contain a carrier frequency in Hz (usually 38000 Hz). The following elements indicate in microseconds how long each pulse should be active or silent, alternating. The first of these represents how long time the IR LEDs are on, the second how long they are off, the third how long time on and so on. The last one must represent an on part. Therefore the length of the array must be even. If another play is started before a previous one has completed, it gets enqueued and starts as soon as the previous completes (max 100 enqueued signals). If the IR is currently recording, the play is also enqueued.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>arr <code>Uint32Array</code>: An array containing the signal (could be any typed array that is backed by an ArrayBuffer).</li>
+				<li>callback <code>Function</code>: Callback called when the whole signal has been played.</li>
+				<li class="subitem"><ul><li>error: Will be falsy if no error occurred.</li></ul></li>
+			</ul>
+
+			<hr>
+
+			<h2>HTTP <code>Module</code></h2>
+			<p>Module name: <code>http</code>.</p>
+			<p>The HTTP module can be used to perform HTTP and HTTPS requests. The module object is an instance of the class HTTP.</p>
+
+			<h3>HTTP <code>Class</code></h3>
+			
+			<h4>Methods</h4>
+
+
+			<h5>makeRequest(options[, callback])</h5>
+			<p>This method performs an HTTP/HTTPS request. Note that if the request could be successfully completed, but the server responded with an HTTP error code (such as 500), that doesn’t count as an error, and hence the error callback parameter will be null. It only counts as an error if the request couldn’t be performed at all, or if the connection broke before it completed.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>options <code>Object</code>:</li>
+				<li class="subitem">
+					<ul>
+						<li>url <code>String</code>: The URL to call.</li>
+						<li>method <code>String</code>: (optional): GET, POST, PUT, DELETE, HEAD, OPTIONS, TRACE are currently the only valid ones. Default: GET.</li>
+						<li>headers <code>String</code>: Dictionary of string (key) to string values.</li>
+						<li>content <code>String</code>: (optional): Request body. Default: empty string.</li>
+						<li>customTrustStore <code>Object</code>: (optional): A custom trust store to use instead of the system's default when the https scheme is used.</li>
+						<li class="subitem">
+							<ul>
+								<li>certList <code>String</code>: One or more certificates to trust in PEM format. Can be both end entity certificates or CA certificates. If multiple certificates, concatenate them. Extraneous whitespace is allowed.</li>
+								<li>validateHostname <code>Boolean</code>: If a custom trust store is used, whether to validate the hostname in the URL against the Subject Alternative Name extension in the server's certificate.</li>
+							</ul>
+						</li>
+					</ul>
+				</li>
+				<li>callback <code>Function</code>:</li>
+				<li class="subitem">
+					<ul>
+						<li>error <code>String</code>: Error message or null.</li>
+						<li>result <code>Object</code>: Will be undefined if error is not null.</li>
+						<li class="subitem">
+							<ul>
+								<li>statusCode <code>Integer</code>: The HTTP status code.</li>
+								<li>statusMessage <code>String</code>: Description of the status code.</li>
+								<li>headers <code>Object</code>: Dictionary of string (key) to string values.</li>
+								<li>content <code>String</code>: The response body.</li>
+							</ul>
+						</li>
+					</ul>
+				</li>
+			</ul>
+
+			<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			<a name="matter"></a>
+			<h2>Matter <code>Module</code></h2>
+			<p>Module name: <code>matter</code>.</p>
+			<p>This module lets you interact with atter devices that have been commissioned to the Flic Hub.</p>
+
+			<p>The module object is an instance of the class Matter.</p>
+
+
+
+
+			<h3>Matter Attribute Value Encoding</h3>
+
+			<p>When Matter values needs to be represented in JavaScript they will be encoded according to the following table.</p>
+			<p>These values are found in writeAttribute, sendCommand and subscription updates.</p>
+
+			<table class="definition">
+
+				<tr>
+					<td><code>Structs</code></td><td>JavaScript Objects.</td>
+				</tr>
+				<tr>
+					<td><code>Typed Enums</code></td><td>An enum name as a String value.</td>
+				</tr>
+				<tr>
+					<td><code>Octstr</code></td><td>Prefixed with "hex:" and followed by the bytes encoded as a hex string in lowercase.</td>
+				</tr>
+				<tr>
+					<td><code>Numbers</code>, <code>Bitmaps</code>, <code>Untyped Enums</code></td><td>Encoded as JavaScript numbers, except 64-bit integers which are encoded as Strings as decimal numbers since JavaScript numbers only has 53 bits of precision.</td>
+				</tr>
+				<tr>
+					<td><code>List</code></td><td>Encoded as JavaScript arrays.</td>
+				</tr>
+				<tr>
+					<td><code>Null</code></td><td>null</td>
+				</tr>
+
+				<tr>
+					<td><code>Boolean</code></td><td>bool</td>
+				</tr>
+			</table>
+
+			<p>Structs with absent optional fields shall not be encoded as null. Instead the field shall not be present at all.</p>
+
+
+			<!-- -->
+
+			<h3>Node <code>Object Type</code></h3>
+
+			<table class="definition">
+				<tr><td>nodeId <code>String</code>: </td><td> Node ID</td></tr>
+				<tr><td>name <code>String</code>: </td><td> Name of the node</td></tr>
+				<tr><td>vendorId <code>integer</code>: </td><td> Matter Vendor ID</td></tr>
+				<tr><td>productId <code>integer</code>: </td><td> Matter Product ID</td></tr>
+				<tr><td>reachable <code>Boolean</code>: </td><td> The connection to the node is currently established</td></tr>
+				<tr><td>isBridge <code>nullable Boolean</code>: </td><td> Whether the node is a Matter Bridge. Might be <code>null</code> if this has yet to be determined</td></tr>
+
+
+				<tr><td>endpoints <code>Endpoint[]</code>: </td><td> List of existing endpoints</td></tr>
+			
+			</table>
+
+			<h3>Endpoint <code>Object Type</code></h3>
+
+			<table class="definition">
+
+				<tr><td>endpointId <code>integer</code>: </td><td> Endpoint ID</td></tr>
+				<tr><td>deviceTypes <code>integer[]</code>: </td><td> See the official Matter Device Type library specification for more information</td></tr>
+				<tr><td>partsList <code>integer[]</code>: </td><td> List of sub-endpoint IDs</td></tr>
+				<tr><td>name <code>String</code>: </td><td> Name of the endpoint.</td></tr>
+				<tr><td>reachable <code>Boolean</code>: </td><td> Present only when this endpoint is a bridged device</td></tr>
+
+			</table>
+
+
+
+			<h3>Matter <code>Class</code></h3>
+
+			<h4>Events</h4>
+
+			<h5>nodeAdd</h5>
+			<p>When a Matter Node has been added.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>node <code>Node</code>: The added Node.</li>
+			</ul>
+
+			<h5>nodeUpdate</h5>
+			<p>When a Matter Node has been updated.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>node <code>Node</code>: The updated Node.</li>
+			</ul>
+
+
+			<h5>nodeRemove</h5>
+			<p>When a Matter Node has been removed.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>nodeId <code>String</code>: The removed Node ID.</li>
+			</ul>
+
+
+			
+			<h4>Methods</h4>
+
+
+			<h5>getNodes()</h5>
+			<p>Returns an array of Node objects.</p>
+			
+
+			<h5>subscribe(nodeId, paths)</h5>
+			<p>This method starts a subscription to a given node. Currently, this method makes use of the Flic Hub's wildcard subscription that is already always active and uses the given paths as a filter for filtering the attributes that are delivered to the Flic Hub Studio module. The filter is an array of paths matching endpoint/cluster/attribute. As long as a path matches as least one of the filters in the array, the data will be included in the update event. An empty object can be used as a wildcard filter. Events will be emitted on the returned Subscription object when attributes or connectivity status are updated. Initially all attributes matching the filter will be emitted in an initial probe. Subsequent events will only contain the updated attributes.</p>
+
+			<p>It is allowed to subscribe to a node which is at the moment not reachable.</p>
+
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>nodeId <code>String</code>: The id of the node.</li>
+				<li>paths <code>Object[]</code>:</li>
+				<li class="subitem">
+					<ul>
+						<li>endpointId <code>integer</code>: An endpoint to filter for, or omitted for wildcard.</li>
+						<li>clusterName <code>String</code>: Name of a cluster to filter for, or omitted for wildcard.</li>
+
+						<li>attributeName <code>String</code>: Name of an attribute to filter for, or omitted for wildcard.</li>
+					
+					</ul>
+				</li>
+			</ul>
+
+			<p>Returns <code>Subscription</code></p>
+
+
+			<h5>sendCommand(nodeId, endpointId, clusterName, commandName, fields[, callback])</h5>
+			<p>Sends a command to a Matter endpoint.</p>
+
+			<ul class="parameters">
+				<li>nodeId <code>String</code>: The ID of the node.</li>
+				<li>endpointId <code>integer</code>: The ID of the endpoint</li>
+				<li>clusterName <code>String</code>: Name of the cluster</li>
+				<li>commandName <code>String</code>: Name of the command</li>
+				<li>fields <code>Object</code>: The fields where the name of the field is the key and the value encoded as specified under <code>Matter Attribute Value Encoding</code>.</li>
+				<li>callback <code>Function(error, response)</code>: Called when invocation has finished.</li>
+				<li class="subitem">
+					<ul>
+						<li>error <code>Object</code> (or <code>null</code> on success):</li>
+						<li class="subitem">
+							<ul>
+								<li>code <code>integer</code>: See official Matter SDK for error codes</li>
+								<li>description <code>String</code>: A description of the error</li>
+							</ul>
+						</li>
+						<li>response <code>Object</code> or <code>null</code>: The fields in the command response or <code>null</code> if the command response is empty. The name of the command response parameters are used as keys in the object.</li>
+					</ul>
+				</li>
+			</ul>
+
+
+			<h5>writeAttribute(nodeId, endpointId, clusterName, commandName, value[, callback])</h5>
+			<p>Writes an attribute to an Matter endpoint.</p>
+
+			<ul class="parameters">
+				<li>nodeId <code>String</code>: The ID of the node.</li>
+				<li>endpointId <code>integer</code>: The ID of the endpoint</li>
+				<li>clusterName <code>String</code>: Name of the cluster</li>
+				<li>commandName <code>String</code>: Name of the command</li>
+				<li>value: The fields where the name of the field is the key and the value encoded as specified under <code>Matter Attribute Value Encoding</code>.</li>
+				<li>callback <code>Function(error)</code>: Called when invocation has finished.</li>
+				<li class="subitem">
+					<ul>
+						<li>error <code>Object</code> (or <code>null</code> on success):</li>
+						<li class="subitem">
+							<ul>
+								<li>code <code>integer</code>: See official Matter SDK for error codes</li>
+								<li>description <code>String</code>: A description of the error</li>
+							</ul>
+						</li>
+					</ul>
+				</li>
+			</ul>
+			
+
+			<!-- -->
+
+
+			<h3>Subscription <code>Class</code></h3>
+
+
+			<h4>Events</h4>
+
+			<h5>update</h5>
+			<p>Initial update after a subscription will contain all the data matching the paths filter.</p>
+
+			<p>Subsequent updates typcially only contains the modified attributes but may contain the complete data set in certain circumstances.</p>
+
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>data <code>Update</code>: The update data.</li>
+			</ul>
+
+
+
+
+			
+
+			<h3>Update <code>Object Type</code></h3>
+
+			<table class="definition">
+
+				<tr><td>connected <code>Boolean</code>: </td><td> Whether device is connected</td></tr>
+				<tr><td>updates <code>Dictionary&lt;EndpointId, Dictionary&lt;ClusterName, Dictionary&lt;AttributeName, value&gt;&gt;&gt;</code>: </td><td> Present only when attributes have been updated</td></tr>
+
+			</table>
+
+			
+			<h4>Methods</h4>
+
+
+			<h5>cancel()</h5>
+			<p>Cancels a subscrption</p>
+			
+
+		
+
+			<!-- -->
+
+
+
+
+
+
+
+
+
+
+
+			<hr>
+
+			<h2>TCP <code>Module</code></h2>
+			<p>Module name: <code>net</code>.</p>
+			<p>This module API is based on Node.js’s net module.</p>
+
+			<h3>net.Server <code>Class</code></h3>
+			<p>Extends: EventEmitter</p>
+			<p>This class is used to create a TCP server.</p>
+
+			
+			<h4>Events</h4>
+
+			<h5>close</h5>
+			<p>Emitted when the server closes. If connections exist, this event is not emitted until all connections are ended.</p>
+
+			<h5>connection</h5>
+			<p>Emitted when a new connection is made. `socket` is an instance of `net.Socket`.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>socket <code>net.Socket</code>: The connection object</li>
+			</ul>
+
+			
+			<h5>error</h5>
+			<p>Emitted when an error occurs in case of a call to `listen` fails. Unlike `net.Socket`, the `close` event will not be emitted directly following this event.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>error <code>Error</code></li>
+			</ul>
+				
+			<h5>listening</h5>
+			<p>Emitted when the server has been bound after calling `server.listen()`.</p>
+
+
+			<h4>Methods</h4>
+
+			<h5>new net.Server([options][, connectionListener])</h5>
+			<p>Creates a new TCP server.</p>
+
+			<p>If `allowHalfOpen` is set to `true`, when the other end of the socket sends a FIN packet, the server will only send a FIN packet back when `socket.end()` is explicitly called, until then the connection is half-closed (non-readable but still writable). See `end` event and RFC 1122 (section 4.2.2.13) for more information.</p>
+
+			<p>If `pauseOnConnect` is set to `true`, then the socket associated with each incoming connection will be paused, and no data will be read from its handle. To begin reading data from a paused socket, call `socket.resume()`.</p>
+
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>options <code>Object</code></li>
+				<li class="subitem">
+					<ul>
+						<li>allowHalfOpen <code>Boolean</code>: Indicates whether half-opened TCP connections are allowed. Default: `false`.</li>
+						<li>pauseOnConnect <code>Boolean</code>: Indicates whether the socket should be paused on incoming connections. Default: `false`.</li>
+					</ul>
+				</li>
+				<li>connectionListener <code>Funciton</code>: Automatically set as a listener for the `connection` event.</li>
+			</ul>
+
+				
+			<p>Returns <code>net.Server</code></p>
+
+			<h5>address()</h5>
+			<p>Returns the bound address of the server as reported by the operating system (useful to find which port was assigned when getting an OS-assigned address).</p>
+
+			<p>`server.address()` returns `null` before a successful `listen` has been called or after calling `server.close()`.</p>
+
+			<p>Returns <code>Object</code> or <code>Null</code>:
+
+			<ul class="parameters">
+				<li>family <code>String</code>: “IPv4”</li>
+				<li>address <code>String</code>: An IP address</li>
+				<li>port <code>Number</code>: The locally bound port</li>
+				
+			</ul>
+
+				
+			<h5>close([callback])</h5>
+
+			<p>Immediately stops the server from accepting new connections and keeps existing connections. This function is asynchronous, the server is finally closed when all connections are ended and the server emits a `close` event. The optional `callback` will be called once the `close` event occurs. Unlike that event, it will be called with an `Error` as its only argument if the server was not open when it was closed.</p>
+			
+			<h5>getConnections(callback)</h5>
+			<p>Asynchronously get the number of concurrent connections on the server.</p>
+
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>callback <code>Function</code>:</li>
+				<li class="subitem">
+					<ul>
+						<li>err <code>Error</code>: An error or `null`</li>
+						<li>count <code>Number</code>: Number of connections</li>
+					</ul>
+				</li>
+			</ul>
+			<p>Returns <code>net.Server</code>: The socket itself</p>
+
+
+			<h5>listen(options[, callback])</h5>
+			<p>Start a TCP server listening for connections on the given `port` and `host`.</p>
+
+			<p>If `port` is omitted or is 0, the operating system will assign an arbitrary unused port, which can be retrieved by using `server.address().port` after the `listening` event has been emitted.</p>
+
+			<p>If `host` is omitted, the server will accept connections on the unspecified IPv4 address (0.0.0.0).</p>
+
+			<p>All servers are set to `SO_REUSEADDR` (see socket(7) for details).</p>
+
+			<p>The `server.listen()` method can be called again if and only if there was an error during the first `server.listen()` call or `server.close()` has been called. Otherwise, an `ERR_SERVER_ALREADY_LISTEN` error will be thrown.</p>
+
+			<p>If the OS returned an error when setting up the listening, an `error` event will be emitted. One of the most common errors raised is `EADDRINUSE`. This happens when another server is already listening on the requested port. One way to handle this would be to retry after a certain amount of time.</p>
+
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>options <code>Object</code>:</li>
+				<li class="subitem">
+					<ul>
+						<li>port <code>Number</code>: TCP port (optional, default: 0)</li>
+						<li>host <code>String</code>: A local IP address, or “localhost” (optional, default: “0.0.0.0”)</li>
+						<li>backlog <code>Number</code>: Backlog in the kernel for accepting new connections</li>
+					</ul>
+				</li>
+				<li>callback <code>Function</code>: Will be added as listener for the `listening` event (once)</li>
+			</ul>
+
+			<p>Returns <code>net.Server</code></p>
+
+
+			<h5>listen([port[, host[, backlog]]][, callback])</h5>
+			<p>Alternative way of calling the above function without using an options object.</p>
+
+
+			<h4>Properties</h4>
+			<h5>listening <code>Boolean</code></h5>
+			<p>Indicates whether or not the server is listening for connections.</p>
+
+
+			<h3>net.Socket <code>Class</code></h3>
+
+			<p>Extends: EventEmitter</p>
+
+			<p>This class is an abstraction of a TCP socket.</p>
+
+			<p>`net.Socket` can be created by the user and used directly to interact with a server. For example, it is returned by `net.createConnection()`, so the user can use it to talk to the server.</p>
+
+			<p>It can also be created internally by a `net.Server` and passed to the user when a connection is received. It is passed to the listeners of a `connection` event emitted on a `net.Server`, so the user can use it to interact with the client.</p>
+
+			<h4>Events</h4>
+
+			<h5>close</h5>
+			<p>Emitted once the socket is fully closed. The argument `hadError` is a boolean which says if the socket was closed due to a transmission error.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>hadError <code>Boolean</code>:</li>
+			</ul>
+
+				
+			<h5>connect</h5>
+			<p>Emitted when a socket connection is successfully established.</p>
+			
+			<h5>data</h5>
+			<p>Emitted when data is received. The argument `data` will be a `Buffer` or `string`. By default the raw bytes are given in a `Buffer`, but if `socket.setEncoding()` has been called a string will be given. In case of UTF-8 encoding and a character that spans multiple bytes, and the incoming data is split in the middle of a character, the socket object will internally buffer the non-terminated bytes until more data is received. Similar buffering applies to Base64.</p>
+
+			<p>The data will be lost if there is no listener when a `Socket` emits a `data` event.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>data <code>Buffer</code> or <code>String</code>: Incoming data</li>
+			</ul>
+				
+			<h5>drain</h5>
+			<p>Emitted when the write buffer (in user space) becomes empty. Can be used to throttle uploads.</p>
+
+			<p>See also: the return values of `socket.write()`.</p>
+			
+			<h5>end</h5>
+			<p>Emitted when the other end of the socket sends a FIN packet, thus ending the readable side of the socket.</p>
+
+			<p>By default (`allowHalfOpen` is false) the socket will send a FIN packet back and destroy its file descriptor once it has written out its pending write queue. However, if `allowHalfOpen` is set to `true`, the socket will not automatically `end()` its writable side, allowing the user to write arbitrary amounts of data. The user must call `end()` explicitly to close the connection (i.e. sending a FIN packet back).</p>
+			
+			<h5>error</h5>
+			<p>Emitted when an error occurs. The `close` event will be called directly following this event.</p>
+
+			<p>This will be emitted either as a result of dns lookup failure, a connection establishment error, or when the socket is unexpectedly closed.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>err <code>Error</code>: An error</li>
+			</ul>
+				
+			<h5>lookup</h5>
+			<p>Emitted after resolving the host name but before connecting.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>err <code>Error</code> or <code>Null</code>: The error object. See `dns.lookup()`.</li>
+				<li>address <code>String</code> or <code>Null</code>: The IP address, or `null` if error</li>
+				<li>family <code>String</code>: The address type “IPv4”</li>
+				<li>host <code>String</code>: The host name that was looked up</li>
+			</ul>
+
+
+
+			<h5>ready</h5>
+			<p>Emitted when a socket is ready to be used.</p>
+
+			<p>Triggered immediately after `connect`.<p>
+
+
+			<h4>Methods</h4>
+
+			<h5>address()</h5>
+			<p>For an open socket, returns the locally bound address of the socket as reported by the operating system.</p>
+			<p>Returns <code>Object</code> | <code>Null</code>:
+			<ul class="parameters">
+				<li>family <code>String</code>: “IPv4”</li>
+				<li>address <code>String</code>: The IP address</li>
+				<li>port <code>Number</code>: The port</li>
+			</ul>
+
+
+			<h5>new net.Socket([options])</h5>
+			<p>Creates a new socket object.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>options <code>Object</code>:</li>
+				<li>
+					<ul class="subitem">
+						<li>allowHalfOpen <code>Boolean</code>: Indicates whether half-opened TCP connections are allowed. See `new net.Server()` and the `end` event for details. Default: false.</li>
+					</ul>
+				</li>
+			</ul>
+			<p>Returns: <code>net.Socket</code></p>
+
+
+			<h5>connect(options[, connectListener])</h5>
+			<p>Initiate a connection on a given socket.</p>
+
+			<p>This function is asynchronous. When the connection is established, the `connect` event will be emitted. If there is a problem connecting, instead of a `connect` event, an `error` event will be emitted with the error passed to the `error` listener (followed by a `close` event).</p>
+
+			<p>Only call this method when the socket is closed.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>options <code>Object</code>:</li>
+				<li>
+					<ul class="subitem">
+						<li>port <code>Number</code>: Port the socket should connect to (required)</li>
+						<li>host <code>Number</code>: Host the socket should connect to. Default: “localhost”.</li>
+					</ul>
+				</li>
+				<li>connectListener <code>Function</code>: Will be added as a listener for the `connect` event (once)</li>
+			</ul>
+
+			<p>Returns: <code>net.Socket</code> The socket itself</p>
+			
+			<h5>connect(port[, host][, connectListener)</h5>
+			<p>Alternative way of calling the above function without using an options object.</p>
+			
+
+
+
+
+
+
+
+
+			<h5>setEncoding([encoding])</h5>
+			<p>Set the encoding for the socket as a Readable Stream.</p>
+
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>encoding <code>String</code> or <code>Null</code>: Allowed encodings are <code>utf8</code>, <code>hex</code> and <code>base64</code>.</li>
+			</ul>
+
+			<p>Returns: <code>net.Socket</code>. The socket itself.</p>
+
+
+
+
+
+
+
+
+
+			<h5>setNoDelay([noDelay])</h5>
+			<p>Enable/disable the use of Nagle's algorithm.</p>
+
+			<p>When a TCP connection is created, it will have Nagle's algorithm enabled.</p>
+
+			<p>Nagle's algorithm delays data before it is sent via the network. It attempts to optimize throughput at the expense of latency.</p>
+
+			<p>Passing <code>true</code> for <code>noDelay</code> or not passing an argument will disable Nagle's algorithm for the socket. Passing <code>false</code> for <code>noDelay</code> will enable Nagle's algorithm.</p>
+
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>noDelay <code>boolean</code>: Default: <code>true</code></li>
+			</ul>
+
+			<p>Returns: <code>net.Socket</code>. The socket itself.</p>
+
+
+
+
+
+
+
+
+
+
+			<h5>setKeepAlive(enable[, initialDelay])</h5>
+			<p>Enable/disable keep-alive functionality, and optionally set the initial delay before the first keepalive probe is sent on an idle socket.</p>
+
+			<p>Set <code>initialDelay</code> (in milliseconds) to set the delay between the last data packet received and the first keepalive probe. Setting <code>0</code> for <code>initialDelay</code> will leave the value unchanged from the default (or previous) setting.</p>
+
+			<p>The number of keep-alive packets (10) and interval (1 second) is currently not configurable.</p>
+
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>enable <code>boolean</code> Default: <code>false</code></li>
+				<li>initialDelay <code>number</code> Default: <code>0</code></li>
+			</ul>
+
+			<p>Returns: <code>net.Socket</code>. The socket itself.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+			<h5>write(data[, encoding][, callback])</h5>
+			<p>Sends data on the socket. The second parameter specifies the encoding in the case of a string. It defaults to UTF8 encoding.</p>
+
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>data <code>String</code> or <code>Buffer</code> or <code>UInt8Array</code>:</li>
+				<li>encoding <code>String</code>: Only used when data is <code>string</code>. <code>utf8</code>, <code>hex</code> or <code>base64</code>. Default: <code>utf8</code>.</li>
+				<li>callback <code>Function</code>: Executed when the data is finally written out, which may not be immediately.</li>
+			</ul>
+
+			<p>Returns: <code>Boolean</code>. Returns <code>true</code> if the entire data was flushed successfully to the kernel buffer. Returns false if all or part of the data was queued in user memory. <code>drain</code> will be emitted when the buffer is again free.</p>
+
+
+			<h5>pause()</h5>
+			<p>Pauses the reading of data. That is, <code>data</code> events will not be emitted. Useful to throttle back an upload.</p>
+
+			<p>Returns: <code>net.Socket</code>. The socket itself.</p>
+
+
+
+
+
+
+
+			<h5>resume()</h5>
+			<p>Resumes reading after a call to <code>socket.pause()</code></p>
+
+			<p>Returns: <code>net.Socket</code>. The socket itself.</p>
+
+
+
+
+
+
+
+
+
+			<h5>end([data[, encoding]][, callback])</h5>
+			<p>Half-closes the socket. i.e., it sends a FIN packet. It is possible the server will still send some data.</p>
+
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>data <code>String</code> or <code>Buffer</code> or <code>UInt8Array</code>:</li>
+				<li>encoding <code>String</code>: Only used when data is <code>string</code>. <code>utf8</code>, <code>hex</code> or <code>base64</code>. Default: <code>utf8</code>.</li>
+				<li>callback <code>Function</code>: Optional callback for when the socket is finished.</li>
+			</ul>
+
+			<p>Returns: <code>net.Scoket</code>. The socket itself.</p>
+
+
+
+
+
+
+
+
+			<h5>destroy([exception])</h5>
+			<p>Ensures that no more I/O activity happens on this socket. Only necessary in case of errors (parse error or so), to abruptly close the socket.</p>
+
+			
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>exception <code>Object</code>: If given, an `error` event will be emitted and any listeners for that event will receive `exception` as an argument.</li>
+				
+			</ul>
+			
+			<hr>
+
+			<h2>TLS <code>Module</code></h2>
+			<p>Module name: <code>tls</code></p>
+			<p>This module is based on Node.js’s tls module.</p>
+
+			<h4>Methods</h4>
+
+			<h5>tls.connect(options[, callback])</h5>
+			<p>This method creates a <code>tls.TLSSocket</code> object and immediately initiates a connection.</p>
+
+			<p>Upgrading an existing TCP socket to TLS is not supported.</p>
+
+			<p>Note: If a custom trust store is not specified, the system's trust store will be used. The hostname in the <code>host</code> parameter will in that case be validated against the Subject Alternative Name extension in the server's certificate (unless <code>rejectUnauthorized</code> has been set to <code>true</code>).</p>
+
+			<p>The <code>connect</code> event will be emitted when the underlying TCP connection has been established. The <code>secureConnect</code> event will be emitted when the handshake is complete (if successful).</code>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>options <code>Object</code>:</li>
+				<li class="subitem">
+					<ul>
+						<li>host <code>String</code>: Host the client should connect to.</li>
+						<li>port <code>Number</code>: Port the client should connect to.</li>
+						<li>rejectUnauthorized <code>Boolean</code>: If not <code>false</code>, the server certificate is verified against the list of trusted certificates. An <code>error</code> event is emitted if verification fails. Default: <code>true</code>.</li>
+						<li>ca <code>String</code>: One or more certificates to trust in PEM format. Can be both end entity certificates or CA certificates. If multiple certificates, concatenate them. Extraneous whitespace is allowed. If this option is not supplied, the system's default trust store will be used instead.</li>
+						<li>validateHostnameIfCAsProvided <code>Boolean</code>: If a custom trust store is used, whether to validate the hostname in the <code>host</code> parameter against the Subject Alternative Name extension in the server's certificate. Default: <code>true</code>.</li>
+					</ul>
+				</li>
+				<li>callback <code>Function</code>: Will be added as a listener for the <code>secureConnect</code> event (once).
+			</ul>
+
+			<p>Returns: <code>tls.TLSSocket</code></p>
+
+			<h5>tls.connect(port[, host][, options][, callback])</h5>
+			<p>Same as <code>tls.connect(options[, callback])</code> except that <code>port</code> and <code>host</code> can be provided as arguments instead of options.</p>
+			<p>A port or host option, if specified, will take precedence over any port or host argument.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>port <code>Number</code>: Default value for <code>options.port</code>.</li>
+				<li>host <code>String</code>: Default value for <code>options.host</code>.</li>
+				<li>options <code>Object</code>: See <code>tls.connect(options[, callback])</code>.</li>
+				<li>callback <code>Function</code>: See <code>tls.connect(options[, callback])</code>.</li>
+			</ul>
+
+			<p>Returns: <code>tls.TLSSocket</code></p>
+
+			<h3>tls.TLSSocket <code>Class</code></h3>
+
+			<p>This class is inherited from <code>net.Socket</code>.</p>
+
+			<p>Instead of constructing an object of this class directly, you must use the <code>tls.connect</code> method instead.</p>
+
+			<p>Currently noDelay and keepAlive are always enabled and can't be adjusted; calls to the methods that change these will be silently ignored.</p>
+
+			<h4>Events</h4>
+
+			<h5>secureConnect</h5>
+			<p>Emitted after the handshaking process for a new connection has successfully completed.</p>
+
+			<hr>
+
+			<h2>UDP/Datagram <code>Module</code></h2>
+			<p>Module name: <code>dgram</code></p>
+			<p>This module is based on Node.js’s dgram module. The UDP/Datagram module is an instance of the class Dgram.</p>
+
+			<h3>Dgram <code>Class</code></h3>
+
+			<h4>Methods</h4>
+
+			<h5>createSocket(options[, callback])</h5>
+			<p>Creates a `dgram.Socket` object. Once the socket is created, calling `socket.bind()` will instruct the socket to begin listening for datagram messages. When `address` and `port` are not passed to `socket.bind()` the method will bind the socket to the "all interfaces" address on a random port. The bound address and port can be retrieved using `socket.address().address` and `socket.address().port`.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>options <code>Object</code>:</li>
+				<li class="subitem">
+					<ul>
+						<li>type <code>String</code>: The family of socket. Must be “udp4”. Required.</li>
+						<li>reuseAddr <code>Boolean</code>: When `true` `socket.bind()` will reuse the address, even if another process has already bound a socket on it. Default: `false`.</li>
+					</ul>
+				</li>
+				<li>callback <code>Function</code>: Attached as a listener for `message` events. Optional.</li>
+			</ul>
+
+				
+			<p>Returns: <code>dgram.Socket</code></p>
+			
+			<h5>createSocket(type[, callback])</h5>
+			<p>See above.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				
+				<li>type <code>String</code>: The family of socket. Must be “udp4”. Required.</li>
+				<li>callback <code>Function</code>: Attached as a listener for `message` events. Optional.</li>
+			
+			</ul>
+				
+			<p>Returns: <code>dgram.Socket</code></p>
+
+			<h3>Socket <code>Class</code></h3>
+
+			<p>Extends: EventEmitter</p>
+
+			<p>Encapsulates the datagram functionality.</p>
+
+			<p>New instances of `dgram.Socket` are created using `dgram.createSocket()`. The `new` keyword is not to be used to create `dgram.Socket` instances.</p>
+
+
+
+			<h4>Methods</h4>
+
+
+			<h5>addMembership(multicastAddress[, multicastInterface])</h5>
+			<p>Tells the kernel to join a multicast group at the given `multicastAddress` and `multicastInterface` using the `IP_ADD_MEMBERSHIP` socket option. If the `multicastInterface` argument is not specified, the operating system will choose one interface and will add membership to it. To add membership to every available interface, call `addMembership` multiple times, once per interface.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				
+				<li>multicastAddress <code>String</code>: An IP address. Required.</li>
+				<li>multicastInterface <code>String</code>: An interface IP address. Optional.</li>
+			
+			</ul>
+				
+
+			<h5>address()</h5>
+			<p>Returns an object containing the address information for a socket. For UDP sockets, this object will contain `address`, `family` and `port` properties.</p>
+
+			<p>Returns: <code>Object</code></p>
+
+			<h5>bind(options[, callback])</h5>
+			<p>For UDP sockets, causes the `dgram.Socket` to listen for datagram messages on a named `port` and optional `address`. If `port` is not specified or is `0`, the operating system will attempt to bind to a random port. If `address` is not specified, the operating system will attempt to listen on all addresses. Once binding is complete, a `’listening’` event is emitted and the optional `callback` function is called.</p>
+
+			<p>Specifying both a `’listening’` event listener and passing a `callback` to the `socket.bind()` method is not harmful but not very useful.</p>
+
+			<p>If binding fails, an `Error` will be thrown.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				
+				<li>options <code>Object</code>:</li>
+				<li class="subitem"><ul>
+					<li>port <code>Integer</code></li>
+					<li>address <code>Integer</code></li>
+				</ul></li>
+				<li>callback <code>Function</code>: Callback with no parameters. Called when binding is complete.</li>
+			
+			</ul>
+
+
+			<h5>bind([port][, address][, callback])</h5>
+			<p>See above.</p>
+
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				
+				<li>port <code>Integer</code></li>
+				<li>address <code>String</code></li>
+				<li>callback <code>Function</code>: Callback with no parameters. Called when binding is complete.</li>
+				
+			
+			</ul>
+
+
+			<h5>close([callback])</h5>
+			<p>Close the underlying socket and stop listening for data on it. If a callback is provided, it is added as a listener for the `’close’` event.</p>
+
+			<p>Parameters:</p>
+
+
+			<ul class="parameters">
+				
+				<li>callback <code>Function</code>: Called when the socket has been closed.</li>
+				
+			</ul>
+
+			<h5>dropMembership(multicastAddress[, multicastInterface])</h5>
+			<p>Instructs the kernel to leave a multicast group at `multicastAddress` using the `IP_DROP_MEMBERSHIP` socket option. This method is automatically called by the kernel when the socket is closed or the process terminates, so most apps will never have reason to call this.</p>
+
+			<p>If `multicastInterface` is not specified, the operating system will attempt to drop membership on all valid interfaces.</p>
+
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				
+				<li>multicastAddress <code>String</code></li>
+				<li>multicastInterface <code>String</code></li>
+				
+			
+			</ul>
+
+
+
+			<h5>send(msg[, offset, length], port[, address][, callback])</h5>
+			<p>Broadcasts a datagram on the socket. The destination `port` and `address` must be specified.</p>
+
+			<p>The `msg` argument contains the message to be sent. Depending on its type, different behavior can apply. If `msg` is a `Buffer` or `Uint8Array`, the `offset` and `length` specify the offset within the `Buffer` where the message begins and the number of bytes in the message, respectively. If `msg` is a `String`, then it is automatically converted to a `Buffer` with `utf8` encoding. With messages that contain multi-byte characters, `offset` and `length` will be calculated with respect to byte length and not the character position. If `msg` is an array, `offset` and `length` must not be specified.</p>
+
+			<p>The `address` argument is a string. If the value of `address` is a host name, DNS will be used to resolve the address of the host. If `address` is not provided or otherwise falsy, “127.0.0.1” will be used by default.</p>
+
+			<p>If the socket has not been previously bound with a call to `bind`, the socket is assigned a random port number and is bound to the “all interfaces” address (“0.0.0.0”).</p>
+
+			<p>An optional `callback` function may be specified to as a way of reporting DNS errors or for determining when it is safe to reuse the `buf` object.</p>
+
+			<p>The only way to know for sure that the datagram has been sent is by using a `callback`. If an error occurs and a `callback` is given, the error will be passed as the first argument to the `callback`. If a `callback` is not given, the error is emitted as an `’error’` event on the `socket` object.</p>
+
+			<p>Offset and length are optional but both must be set if either are used. They are supported only when the first argument is a `Buffer` or `Uint8Array`.</p>
+
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				
+				<li>msg <code>Buffer</code> or <code>Uint8Array</code> or <code>String</code>: Message to be sent.</li>
+				<li>offset <code>Integer</code>: Offset in the buffer where the message starts.</li>
+				<li>length <code>Integer</code>: Number of bytes in the message.</li>
+				<li>port <code>Integer</code>: Destination port.</li>
+				<li>address <code>String</code>: Destination hostname or IP address.</li>
+				<li>callback <code>Function</code>: Called when the message has been sent.</li>
+				
+			
+			</ul>
+
+
+			<h5>setBroadcast(flag)</h5>
+			<p>Sets or clears the `SO_BROADCAST` socket option. When set to `true`, UDP packets may be sent to a local interface’s broadcast address.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				
+				<li>flag <code>Boolean</code></li>
+			</ul>
+
+				
+			<h5>setMulticastInterface(multicastInterface)</h5>
+			<p>Sets the default outgoing multicast interface of the socket to a chosen interface or back to system interface selection. The `multicastInterface` must be a valid string representation of an IP from the socket’s family.</p>
+
+			<p>This should be the IP configured for the desired physical interface. All packets sent to multicast on the socket will be sent on the interface determined by the most recent successful use of this call.</p>
+
+			<p>A call on a socket that is not ready to send or no longer open may throw a Not running `Error`.</p>
+
+			<p>If `multicastInterface` can not be parsed into an IP then EINVAL `System Error` is thrown.</p>
+
+			<p>If `multicastInterface` is a valid address but does not match any interface, or if the address does not match the family then a `System Error` such as `EADDRNOTAVAIL` or `EPROTONOSUP` is thrown.</p>
+
+			<p>The ANY address (“0.0.0.0”) can be used to return control of the socket’s default outgoing interface to the system for future multicast packets.</p>
+
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				
+				<li>multicastInterface <code>String</code></li>
+			</ul>
+
+				
+			<h5>setMulticastLoopback(flag)</h5>
+			<p>Sets or clears `IP_MULTICAST_LOOP` socket option. When set to `true`, multicast packets will also be received on the local interface.</p>
+
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				
+				<li>flag <code>Boolean</code></li>
+			</ul>
+				
+			<h5>setMulticastTTL(ttl)</h5>
+			<p>Sets the `IP_MULTICAST_TTL` socket option. While TTL generally stands for “Time to Live”, in this context it specifies the number of IP hops that a packet is allowed to travel through, specifically for multicast traffic. Each router or gateway that forwards a packet decrements the TTL. If the TTL is decremented to 0 by a router, it will not be forwarded.</p>
+
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				
+				<li>ttl <code>Integer</code>: Between 0 and 255. The default on most systems is 1.</li>
+			</ul>
+
+				
+			<h5>setTTL(ttl)</h5>
+			<p>Sets the `IP_TTL` socket option. While TTL generally stands for “Time to Live”, in this context it specifies the number of IP hops that a packet is allowed to travel through. Each router or gateway that forwards a packet decrements the TTL. If the TTL is decremented to 0 by a router, it will not be forwarded. Changing TTL values is typically done for network probes or when multicasting.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				
+				<li>ttl <code>Integer</code>: Between 1 and 255. The default on most systems is 64.</li>
+			</ul>
+				
+
+			<h4>Events</h4>
+			
+			<h5>close</h5>
+			<p>The `close` event is emitted after a socket is closed with `close()`. Once triggered, no new `message` events will be emitted on this socket.</p>
+			
+			<h5>error</h5>
+			<p>The `error` event is emitted whenever any error occurs. The event handler function is passed a single `Error` object.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				
+				<li>exception <code>Error</code></li>
+			</ul>
+				
+
+				
+			<h5>listening</h5>
+			<p>The `listening` event is emitted once the `dgram.Socket` is addressable and can receive data. This happens either explicitly with `socket.bind()` or implicitly the first time data is sent using `socket.send()`. Until the `dgram.Socket` is listening, the underlying system resources do not exist and calls such as `socket.address()` and `socket.setTTL()` will fail.</p>
+			
+			<h5>message</h5>
+			<p>The `message` event is emitted when a new datagram is available on the socket. The event handler function is passed two arguments: `msg` and `rinfo`.</p>
+			<p>Parameters:</p>
+
+
+			<ul class="parameters">
+				
+				<li>msg <code>Buffer</code>: The message.</li>
+				<li>rinfo <code>Object</code>: Remote address information.</li>
+				<li class="subitem"><ul>
+					<li>address <code>String</code>: The sender address.</li>
+					<li>family <code>String</code>: The address family (“IPv4”).</li>
+					<li>port <code>Number</code>: The sender port.</li>
+					<li>size <code>Number</code>: The message size.</li>
+				</ul></li>
+			</ul>
+
+			<hr>
+
+			<h2>Datastore <code>Module</code></h2>
+
+			<p>Module name: <code>datastore</code></p>
+			<p>The Datastore module can be used to store string values identified by a key (string) in persistent storage. Both the key and value must consist of valid UTF-16, i.e. no unpaired surrogate pairs are allowed. The storage is individual for each package. The Datastore module is an instance of the class Datastore.</p>
+
+			<h3>Datastore <code>Class</code></h3>
+
+			<h4>Methods</h4>
+
+			<h5>put(key, value[, callback])</h5>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				
+				<li>key <code>String</code>: The key.</li>
+				<li>value <code>String</code>: The value</li>
+				<li>callback <code>Function</code>: Will be invoked when the store is complete</li>
+				<li class="subitem"><ul>
+					<li>error <code>Error</code>: Error object if an error occurred, otherwise null</li>
+					
+				</ul></li>
+			</ul>
+
+				
+			<h5>get(key, callback)</h5>
+			<p>Parameters:</p>
+
+
+			<ul class="parameters">
+				
+				<li>key <code>String</code>: The key.</li>
+				<li>callback <code>Function</code>: Will be invoked when the store is complete</li>
+				<li class="subitem"><ul>
+					<li>error <code>Error</code>:  If a datastore error occurred other than the value was not found</li>
+					<li>result <code>String</code>: The stored string value. Will be null if not found.</li>
+					
+				</ul></li>
+			</ul>
+
+
+			<hr>
+
+			<h2>Network <code>Module</code></h2>
+			<p>Module name: <code>network</code></p>
+			<p>The Network module can be used to configure the hub’s Wi-Fi and to obtain status about the wired and wireless Ethernet interfaces. The module object is an instance of the class Network.</p>
+
+
+			<p>The hub maintains a list of saved networks. While not connected to any network, it regularly scans the surrounding area for a network matching one in the list of saved networks and automatically tries to connect if it discovers one. As long as being connected, it will not try to connect to other networks in the list.</p>
+
+			<h3>Network <code>Class</code></h3>
+			
+			<h4>Methods</h4>
+			
+			<h5>scan(callback)</h5>
+			<p>This method performs a scan which usually only takes a few seconds and then delivers the result to the callback.</p>
+			<p>Parameters:</p>
+
+
+			<ul class="parameters">
+				
+				<li>callback <code>Function</code>: </li>
+				
+				<li class="subitem"><ul>
+					<li>error <code>String</code>:  Error or null</li>
+					<li>networks <code>Network[]</code>: Where each Network contains the following properties:</li>
+					<li class="subitem"><ul>
+						<li>ssid <code>integer[]</code>: The SSID as an array of bytes (integers). Use “new TextDecoder().decode(new Uint8Array(ssid))” to convert to user-friendly display string.</li>
+						<li>rssi <code>integer</code>: RSSI in dBm.</li>
+						<li>open <code>boolean</code>: If the network is open (not encrypted).</li>
+						<li>wpaPsk <code>boolean</code>: If the network uses WPA-PSK.</li>
+						<li>wpaEap <code>boolean</code>: If the network uses WPA-EAP (currently not supported).</li>
+					</ul></li>
+				</ul></li>
+			</ul>
+
+				
+
+
+			<h5>connect(network, callback)</h5>
+			<p>This method connects to a network. If the hub is already connected to some network, this network is temporarily disconnected. If the connection could be established to the new network, it is saved in the list and remains connected. If the connection cannot be established within a short time frame, the operation is aborted and the hub goes back to regularly trying to connect to networks in the saved list as usual.</p>
+
+			<p>If the network provided is already exists in the list but is currently not connected to, the same as above applies but instead of storing a duplicate the options are just updated.</p>
+
+			<p>Note that the WRONG_PASSWORD is based on heuristics so WRONG_PASSWORD and TIMEOUT should be treated interchangeably since it has proven to be hard to differentiate between a wrong password and a timeout. Wrong password can hence mean that the password was correct but it timed out for another reason.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>network <code>Object</code>:</li>
+				<li class="subitem"><ul>
+					<li>ssid <code>string or Array</code>: Either a string to be encoded as UTF-8 or an Array of integers representing bytes (0-255).</li>
+					<li>psk <code>string or null</code>: Either the network key for WPA with PSK or null if an open network.</li>
+				</ul></li>
+				<li>callback <code>Function</code>:</li>
+				<li class="subitem"><ul>
+					<li>error <code>string or null</code>: One of FAIL, TIMEOUT, WRONG_PASSWORD, CANCEL.</li>
+				</ul></li>
+			</ul>
+
+
+			<h5>cancelConnect()</h5>
+			<p>Cancels an ongoing connect attempt (see above).</p>
+			
+			<h5>addNetwork(network)</h5>
+			<p>Adds a network to the hub’s internal list of networks. See the general description above how this list works. The network parameter is an object of the same format as in the connect method.</p>
+			
+			<h5>removeNetwork(network)</h5>
+			<p>Removes a network from the hub’s internal list of networks.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>network <code>Object</code>:</li>
+				<li class="subitem"><ul>
+					<li>ssid <code>String</code> or <code>Array</code>: Either a string to be encoded as UTF-8 or an Array of integers representing bytes (0-255).</li>
+				</ul></li>
+			</ul>
+
+			<h5>wpsPushButton(callback)</h5>
+			<p>This method initiates a WPS push button attempt. Once this method has been called the user has 120 seconds to also press the WPS push button on a nearby router (or if the user first pressed WPS button on the router, this method should be called within 120 seconds). When that occurs, the router will send over its SSID and WPA key to the hub.</p>
+			<p>Parameters:</p>
+
+			<ul class="parameters">
+				<li>callback <code>Function</code>:</li>
+				<li class="subitem"><ul>
+					<li>error <code>String</code>: Error if one occurs</li>
+					<li>network <code>Object</code></li>
+					<li class="subitem"><ul>
+						<li>ssid <code>Integer[]</code>: The SSID as an array of bytes (integers). Use “new TextDecoder().decode(new Uint8Array(ssid))” to convert to user-friendly display string.</li>
+						<li>psk <code>String</code>: PSK</li>
+					</ul></li>
+				</ul></li>
+			</ul>
+
+			<h5>wpsCancel()</h5>
+			<p>Cancels an ongoing WPS push button attempts</p>
+			
+			<h5>getNetworks()</h5>
+			<p>Returns a copy of the hub’s internal list of networks as an array (<code>WiFiNetwork[]</code>). See the scan method callback for the format of every WiFiNetwork.</p>
+
+			<h5>getState()</h5>
+			<p>Returns the current connectivity state.</p>
+
+			<p>Returns:</p>
+
+			<ul class="parameters">
+				<li>dhcp <code>Object</code>:</li>
+				<li class="subitem"><ul>
+					<li>wifi <code>Object</code>:</li>
+					<li class="subitem"><ul>
+						<li>connected <code>Boolean</code></li>
+						<li>ip <code>String</code></li>
+						<li>mac <code>String</code>: The MAC address of the local adapter.</li>
+					</ul></li>
+					<li>ethernet <code>Object</code>: </li>
+					<li class="subitem"><ul>
+						<li>connected <code>Boolean</code></li>
+						<li>ip <code>String</code></li>
+						<li>mac <code>String</code>: The MAC address of the local adapter.</li>
+					</ul></li>
+				</ul></li>
+				<li>wifiState <code>Object</code>:</li>
+				<li class="subitem"><ul>
+					<li>state <code>String</code>: One of 
+						<code>DISCONNECTED</code>, 
+						<code>INACTIVE</code>, 
+						<code>SCANNING</code>, 
+						<code>AUTHENTICATING</code>, 
+						<code>ASSOCIATING</code>, 
+						<code>ASSOCIATED</code>, 
+						<code>FOUR_WAY_HANDSHAKE</code>, 
+						<code>GROUP_HANDSHAKE</code>, 
+						<code>COMPLETED</code> or 
+						<code>UNKNOWN</code>
+					</li>
+				</ul></li>
+				<li>ssid <code>integer[]</code> or <code>null</code>: The SSID as an array of bytes (integers). Use <code>new TextDecoder().decode(new Uint8Array(ssid))</code> to convert to a user-friendly display string. Will be null if currently not associated.</li>
+			</ul>
+
+			<hr>
+
+			<h2>HubInfo <code>Module</code></h2>
+			<p>Module name: <code>hubinfo</code></p>
+			<p>The HubInfo module is a simple object containing information about the hub, namely serial number and firmware version.</p>
+
+			<p>Object</p>
+
+			<ul class="parameters">
+				<li>serialNumber <code>String</code>: Serial number of the hub</li>
+				<li>firmwareVersion <code>String</code>: Firmware version of the hub</li>
+			</ul>
+
+
+
+
+			<hr>
+
+			<a name="flicapp"></a>
+			<h2>Flic App <code>Module</code></h2>
+
+			<p>This module is currently in Beta, API details may change before official release.</p>
+
+			<p>Module name: <code>flicapp</code></p>
+			<p>This module is used to integrate with features that are controlled in the Flic App. The module is an instance of the class FlicApp.</p>
+
+			<p>In the Flic App, it is possible to create virtual devices in the Flic Hub Studio provider. These virtual devices can then be used as target devices for the Flic Twist controller. The idea is to be able to bridge devices through Flic Hub Studio. If the remote state of e.g. a light is changed by any external means other than using the Flic Twist, you should call the `virtualDeviceUpdateState` method so that the Flic Twist is aware of the change, so that LEDs can be updated accordingly, as well as any small movements will cause updates based on the correct value. For Advanced Dimming and Scene Blender, however, communication is only one way (from Flic Twist to Flic Hub Studio) and this thus does not have to be done.</p>
+
+			<h3>FlicApp <code>Class</code></h3>
+
+			<h4>Events</h4>
+
+			<h5>actionMessage</h5>
+
+			<p>Emitted when the Flic Hub Studio message action, that can be configured as a trigger in the Flic app, is executed. The intention is that these actions can be used in advanced Flic Twist configurations such as action points in Advanced Dimming or Scene Blender, or used with the Selector.</p>
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>message <code>String</code>: The configured message</li>
+			</ul>
+
+
+			<h5>virtualDeviceUpdate</h5>
+
+			<p>This event is emitted when the Flic Twist is rotated and it is configured to control the virtual device indicated in the parameter. Note that the `values` object will only contain the fields that are included in this particular update.</p>
+
+			<ul class="parameters">
+
+
+				<li>metaData <code>Object</code>:</li>
+				<li class="subitem">
+					<ul>
+						<li>buttonId <code>String</code>: The identifier of the Flic Button or Flic Twist causing this change</li>
+
+						<li>dimmableType <code>String</code>: One of <code>Light</code>, <code>Blind</code> and <code>Speaker</code></li>
+
+						
+						<li>virtualDeviceId <code>String</code>:  The identifier of the virtual device being updated</li>
+
+					</ul>
+				</li>
+
+
+				<li>values <code>Object</code>:</li>
+				<li class="subitem">
+					<ul>
+						<li>colorTemperature <code>Number</code>: Between 0 and 1</li>
+
+						<li>brightness <code>Number</code>: Between 0 and 1</li>
+
+						<li>hue <code>Number</code>: Between 0 and 1</li>
+
+						<li>saturation <code>Number</code>: Between 0 and 1</li>
+
+						<li>volume <code>Number</code>: Between 0 and 1</li>
+
+						<li>position <code>Number</code>: Between 0 and 1</li>
+
+					</ul>
+				</li>
+
+
+
+
+			</ul>
+
+
+			<h4>Methods</h4>
+
+			<h5>virtualDeviceUpdateState(type, id, values)</h5>
+			<p>Inform the Flic Hub software that the remote state of the device this virtual device represents has been updated.</p>
+			
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>type <code>String</code>: Should be <code>Light</code>, <code>Blind</code> or <code>Speaker</code>.</li>
+
+				<li>id <code>String</code>: The identifier of the virtual device. Must match the configured virtual device in the Flic app under the Flic Hub Studio provider.</li>
+
+				<li>values <code>Object</code>: For the Light type, this shall be an object containing any combination of the keys <code>brightness</code>, <code>hue</code>, <code>saturation</code> and <code>colorTemperature</code> (at least one); for Blinds the only allowed key is <code>position</code>; for Speaker the only allowed key is <code>volume</code>. All values shall be floating point numbers between 0 and 1.</li>
+			</ul>
+			
+
+			<hr>
+
+			<h2>Crypto <code>Module</code></h2>
+
+			<p>Module name: <code>crypto</code>.</p>
+
+			<p>The module object is a simple object containing the following functionality:</p>
+
+			<h4>Methods</h4>
+
+			<h5>randomBytes(size)</h5>
+			<p>This method generates random bytes using a cryptographically secure random number generator.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>size <code>Integer</code>: The number of bytes to generate.</li>
+			</ul>
+
+			<p>Returns <code>Buffer</code>: The random bytes</p>
+
+			<hr>
+
+			<h2>File system <code>Module</code></h2>
+
+			<p>Module name: <code>fs</code>.</p>
+
+			<p>The module object is a simple object containing the following functionality:</p>
+
+			<h4>Methods</h4>
+
+			<h5>readFileSync(path[, options])</h5>
+			<p>Returns the contents of the file stored at the given <code>path</code>. If the <code>encoding</code> option is specified then this function returns a <code>string</code> (see <code>Buffer</code> documentation for supported encodings). Otherwise it returns a <code>Buffer</code>.</p>
+
+			<p>Parameters:</p>
+			<ul class="parameters">
+				<li>path <code>String</code>: A path, relative to the package directory.</li>
+				<li>options <code>Object</code>:</li>
+				<li class="subitem"><ul>
+					<li>encoding <code>String</code> or <code>Null</code>: An optional encoding.
+				</ul></li>
+			</ul>
+
+			<p>Returns <code>Buffer</code> or <code>String</code>: The file contents.</p>
+
+			<hr>
+
+			<h2>Events <code>Module</code></h2>
+
+			<p>Module name: <code>events</code>.</p>
+
+			<p>The module object is an instance of the class EventEmitter. See its <a href="https://nodejs.org/api/events.html#class-eventemitter" target="_blank">API in the Node.js documentation</a>.</p>
+
+			<hr>
+
+			<h2>Global functions and classes</h2>
+
+			<p>These functions and classes are available directly without the need of any use of <code>require</code>.</p>
+
+			<h3>Buffer <code>Class</code></h3>
+
+			<p>This class follows the <a href="https://nodejs.org/api/buffer.html#class-buffer" target="_blank">API found in Node.js</a>. Currently unsupported methods/properties: <code>poolSize</code>, <code>indexOf</code>, <code>lastIndexOf</code>, <code>swap16</code>, <code>swap32</code>, <code>swap64</code>, and all methods involving BigInts. Supported encodings are <code>utf8</code>, <code>hex</code> and <code>base64</code>.</p>
+
+			<h3>TextEncoder <code>Class</code></h3>
+
+			<p>This class follows the <a href="https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder" target="_blank">TextEncoder Web API</a>. The <code>encodeInto()</code> method is not supported.</p>
+
+			<h3>TextDecoder <code>Class</code></h3>
+
+			<p>This class follows the <a href="https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder" target="_blank">TextDecoder Web API</a>. Only the UTF-8 encoding is supported.</p>
+
+			<h3>Timer API</h3>
+
+			<p>The <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout" target="_blank">setTimeout()</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval" target="_blank">setInterval()</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/clearTimeout" target="_blank">clearTimeout()</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/clearInterval" target="_blank">clearInterval()</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Performance/now" target="_blank">performance.now()</a> functions are available.</p>
+
+			<h3>Debug printing</h3>
+
+			<p>The methods <code>print(val1, ..., valN)</code> and <code>console.log(val1, ..., valN)</code> can be used to print to the console in Flic Hub Studio.</p>
+
+			<hr>
+
+			<p class="footer">Copyright &copy; 2020-2025 Shortcut Labs AB</p>
+
+		</div>
+
+	</body>
+</html>
