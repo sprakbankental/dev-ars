@@ -1,0 +1,151 @@
+:sbtal-docstype-tut:
+:sbtal-theme-unknown:
+include::./attributes/config.adoc[]
+= {voc-sbtal} {var-docs-type}: Capturing FLIC's SDK IDE snapshots
+:author_1:         Jens Edlund
+:email_1:          edlund@speech.kth.se
+:firstname_1:      Jens
+:lastname_1:       Edlund
+:authorinitials_1: JE
+:revnumber:        {repoversion}
+:revdate:          2026-01-19
+:revremark:        Draft
+:description: Static captures of FLIC's SDK IDE
+:keywords: ARS, FLIC, SDK, snapshotting, group perception lab
+
+This document describes how to capture static snapshots of
+the FLIC SDK IDE (integrated development environment).
+FLIC's online IDE is at the time of writing
+the only way to programme FLIC Hubs, and since we're making
+a fairly substantial investment in FLIC-based development,
+we need to guard against the risk of losing access to
+the IDE in the future.
+
+:var-docs-related-features: %collapsible
+:var-docs-vocabulary-features: %collapsible
+include::{includedir}frg-presets.adoc[tags=prelude]
+
+== The FLIC Hub Studio
+
+The FLIC Hub IDE is a web-based programming environment
+for programming FLIC Hubs using JavaScript.
+It is available at
+link:https://hubsdk.flic.io/[https://hubsdk.flic.io/].
+
+== Capturing snapshots
+
+Snapshot capture is expected to be infrequent and deliberate,
+and is only performed when
+changes in the upstream IDE are suspected or observed.
+
+We capture snapshots of the FLIC Hub Studio using
+a custom Dockerfile build that automates the process.
+
+The Dockerfile is a multistage build with a number of targets.
+For capture, the targets `snapshot` and `serve` are both meaningful.
+The `snapshot` target can be used to download a copy of
+the cloud IDE for inspection inside the image.
+
+The snapshot is available in `/snapshot` inside the image.
+
+.Capture a fresh snapshot in a Docker image
+[source,bash]
+----
+# In this repo root directory
+cd flic-hub-sdk # <.>
+docker build --target snapshot -t flic-hub-studio:snapshot . # <.>
+docker run -it --rm flic-hub-studio:snapshot bash # <.>
+ls /snapshot # <.>
+exit # <.>
+----
+
+<.> Start in the repo root and move to the `flic-hub-sdk` directory
+<.> Build the Docker image using the `snapshot` target
+<.> Run a container from the image and open a bash shell
+<.> List the contents of the `/snapshot` directory inside the container.
+Inspect whatever you need to verify the snapshot.
+<.> Exit the container (`--rm` ensures it is removed after exit)
+
+The `serve` target adds a web server that can be used to serve
+the snapshot for local inspection in a web browser.
+This should always be used before accepting a new snapshot.
+Once functionality has been verified,
+the snapshot can be copied from the container and
+checked into the repository.
+
+.Capture and serve a fresh snapshot for function testing and checkin
+[source,bash]
+----
+cd flic-hub-sdk # <.>
+docker build -t flic-hub-studio:serve . # <.>
+docker run -d --rm --name flic-hub-studio -p 8080:80 flic-hub-studio:serve # <.>
+git checkout develop # <.>
+git push origin develop
+git checkout -b flic-hub-studio-snapshot-DATE # <.>
+git push -u origin flic-hub-studio-snapshot-DATE # <.>
+rm -rf snapshot # <.>
+docker cp flic-hub-studio:/snapshot snapshot # <.>
+git add snapshot # <.>
+git commit -m "Add FLIC Hub Studio snapshot from DATE" # <.>
+git push origin flic-hub-studio-snapshot-DATE # <.>
+git checkout develop # <.>
+git merge flic-hub-studio-snapshot-DATE # <.>
+git push origin develop # <.>
+docker stop flic-hub-studio # <.>
+----
+
+<.> Move into the `flic-hub-sdk` directory
+<.> Build the Docker image using the default target (`serve`)
+<.> Run a container from the image in detached mode.
+The snapshot IDE will be available at
+link:http://localhost:8080/[http://localhost:8080/]
+in a web browser.
+Spin up hardware to test functionality as needed.
++
+.Test protocol
+[%collapsible%open]
+====
+Connection::
+. Power up a Flic HUB
+. Connect to the HUB using the Flic app on your phone
+. Open settings on the phone to find the HUB's IP address
+. The Hub's password is (at the time of this writing)
+written on the back of the Hub.
+. *Enter IP and password in the IDE; hit connect*.
+. If connection fails, look for errors in the browsers devtools.
+
+Terminal::
+. Open the terminal in the IDE
+. *Type `help`* and verify that a list of commands is shown.
+. *Try commands like `scan`, `stopScan` and `network`.
+
+Modules::
+. Select a module in the modules panel
+. *Hit start*
+. Verify that the module starts correctly on the Hub
+. *Right click a module and verify that `export` works*
+
+IDE::
+. *Test typing something in the code windows (and discard the change)*
+
+Buttons::
+. *Press the physical buttons on the Hub and verify that
+the button events are shown in the terminal and the console*
+. *Test the Button `List` and `Export` functions in the IDE*
+====
+
+<.> Make sure we're on the develop branch and that it is synched with origin.
+<.> Checkout a new branch for the snapshot checkin.
+`DATE` should be an ISO 8601 date, e.g. 2026-01-19.
+<.> Push the new branch to the remote repository.
+<.> Remove any existing `snapshot` directory
+<.> Copy the snapshot from the running container to a local `snapshot` directory.
+<.> Add the `snapshot` directory to git.
+<.> Commit the new snapshot with a descriptive commit message.
+<.> Push the new snapshot branch to the remote repository.
+<.> Checkout the `develop` branch again.
+<.> Merge the snapshot branch into `develop`.
+<.> Push the updated `develop` branch to the remote repository.
+<.> Stop and remove the running container (it was started with `--rm`).
+
+

@@ -1,0 +1,176 @@
+:sbtal-docstype-tut:
+:sbtal-theme-unknown:
+include::./attributes/config.adoc[]
+= {voc-sbtal} {var-docs-type}: Serving the FLIC SDK IDE locally
+:author_1:         Jens Edlund
+:email_1:          edlund@speech.kth.se
+:firstname_1:      Jens
+:lastname_1:       Edlund
+:authorinitials_1: JE
+:revnumber:        {repoversion}
+:revdate:          2026-01-19
+:revremark:        Draft
+:description: Running the FLIC SDK IDE from a local snapshot
+:keywords: ARS, FLIC, SDK, IDE, local serving, group perception lab
+
+This document describes how to run
+the FLIC SDK IDE from a locally served snapshot.
+This is the supported way of interacting with
+FLIC Hubs in day-to-day development once
+a snapshot has been captured.
+The procedures here assume that
+a valid snapshot exists.
+Snapshot capture itself is described in
+`tut-flic-sdk-snapshot-capture.adoc`.
+Note that the IDE can be served locally or through
+one of {voc-sbtal}'s cloud services.
+
+:var-docs-related-features: %collapsible
+:var-docs-vocabulary-features: %collapsible
+include::{includedir}frg-presets.adoc[tags=prelude]
+
+== Purpose and scope
+
+The FLIC SDK IDE is required in order to:
+
+- connect to FLIC Hubs,
+- deploy and run modules on hubs,
+- pair, inspect, and export button configurations, and
+- observe button events and console output.
+
+For operational work,
+the IDE should be served locally from a known snapshot.
+This removes the runtime dependency on
+FLIC-controlled servers and
+ensures stable behaviour over time.
+
+== Serving modes
+
+The Dockerfile provides two serving targets:
+
+`serve`::
+Builds a snapshot and serves it from inside the image.
+This is the default target and the simplest way to run the IDE.
+
+`serve-mounted`::
+Serves an existing snapshot mounted at `/snapshot`.
+This mode does not contact
+FLIC servers at build time and is suitable for
+long-term or offline use.
+
+Both targets expose the IDE over HTTP and behave
+identically from the browser’s perspective.
+
+== Serving a snapshot embedded in the image (`serve`)
+
+This mode is typically used
+immediately after capturing or updating a snapshot.
+It can also be used as a pre-built image for delivery over
+Docker registries and quick startup.
+
+.Build and run the IDE from an embedded snapshot
+[source,bash]
+----
+cd flic-hub-sdk # <.>
+docker build -t flic-hub-studio:serve . # <.>
+docker run -d --rm \
+	--name flic-hub-studio \
+	-p 8080:80 \
+	flic-hub-studio:serve # <.>
+----
+
+<.> Move into the `flic-hub-sdk` directory
+<.> Build the Docker image using the default target (`serve`)
+<.> Run the container in detached mode and expose port 80 on localhost
+
+The IDE is now available at
+link:http://localhost:8080/[http://localhost:8080/].
+
+This mode embeds the snapshot inside the image.
+If `/snapshot` is externally mounted,
+the container will refuse to start to prevent
+accidental overwriting.
+
+== Serving an existing snapshot (`serve-mounted`)
+
+This mode is used when a snapshot already exists in the working tree
+(e.g. a snapshot checked into version control).
+
+.Run the IDE from a mounted snapshot
+[source,bash]
+----
+cd flic-hub-sdk # <.>
+docker build --target serve-mounted -t flic-hub-studio:serve-mounted . # <.>
+docker run -d --rm \
+	--name flic-hub-studio \
+	-v "${PWD}/snapshot:/snapshot" \
+	-p 8080:80 \
+	flic-hub-studio:serve-mounted # <.>
+----
+
+<.> Move into the `flic-hub-sdk` directory
+<.> Build the image using the `serve-mounted` target
+<.> Mount the local `snapshot` directory into the container
+
+At startup,
+the container verifies that
+`/snapshot/hubsdk.flic.io` exists.
+If it does not, the container exits with an error.
+
+== Connecting to a FLIC Hub
+
+Once the IDE is running:
+
+. Power up a FLIC Hub
+. Obtain the Hub’s IP address using the FLIC mobile app
+. Open the IDE in a browser
+. Enter the Hub’s IP address and password
+. Click *Connect*
+
+All communication between the IDE and the Hub takes place over
+the local network.
+
+No FLIC cloud services are required for normal operation.
+
+== Notes on operational use
+
+- The IDE served here is functionally identical to the cloud-hosted IDE
+- Discovery may be unreliable; manual IP entry is preferred
+- Firmware updates and IDE updates should be treated cautiously
+- Any change in IDE behaviour should trigger a new snapshot capture
+
+For snapshot capture and verification,
+see
+xref:tut-flic-sdk-snapshot-capture.adoc[
+the FLIC Hub SDK snapshot capture tutorial].
+
+== Pushing images to a Docker registry
+
+Once an image has been built and verified,
+it can be pushed to a Docker registry
+for easy deployment on other machines.
+This requires tagging the image with
+the target registry and repository.
+
+.Tag and push the image to a Docker registry
+[source,bash]
+----
+docker tag flic-hub-studio:serve sprakbankental/flic-hub-studio:DATE # <.>
+docker push sprakbankental/flic-hub-studio:DATE # <.>
+----
+
+<.> Tag the local image for the target registry and repository.
++
+[CAUTION]
+====
+.Date based versioning
+[%collapsible]
+=====
+We're deliberately flouting {voc-sbtal} versioning policy here.
+The reason is that snapshots are inherently tied to
+specific points in time rather than software versions.
+=====
+====
+
+<.> Push the tagged image to the registry.
+
